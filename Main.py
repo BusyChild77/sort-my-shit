@@ -24,7 +24,7 @@ from src.infrastructure.repository.SettingsRepository import SettingsRepository
 from src.infrastructure.repository.FileInfoRepository import FileInfoRepository
 from src.infrastructure.repository.TmpStorageRepository import TmpStorageRepository
 
-from pysman.ServiceManager import ServiceManager
+from pysman.service_manager import ServiceManager
 from src.manager.ViewManager import ViewManager
 
 
@@ -56,7 +56,7 @@ class SortMyShit:
             "TmpStorageRepositoryInterface": TmpStorageRepository,
             "EventManagerInterface": EventManager,
         })
-        serviceManager.register_services(services)
+        serviceManager.autoload_services(services)
         serviceManager.get_service("SettingsRepository").runDir = os_path.dirname(os_path.abspath(sys_argv[0]))
         serviceManager.get_service("LogFileLogger").activate_logging()
 

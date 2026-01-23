@@ -1,2 +1,2 @@
 pyinstaller==6.12.0
-pysman==0.1.0
+pysman==0.2.0
