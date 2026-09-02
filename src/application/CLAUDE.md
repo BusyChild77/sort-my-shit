@@ -23,7 +23,8 @@ type annotations, so a view asks for what it needs by annotating it.
 
 - `render_title(text, subtitle)` — heading
 - `render_folders(settings_repository, {setting name: label})` — the folders the screen
-  works on
+  works on, bracketed by the two rules that split the screen into heading, folders and
+  results
 - `render_toolbar([(label, command, variant)])` — the action buttons
 - `render_status()` — the one line state, fed by the `status` event
 - `render_body(empty_message)` — the scrollable result list, showing `empty_message`
@@ -39,6 +40,12 @@ The folders an action works on are picked on that action's own screen, not in Se
 which only holds the options changing *how* an action behaves. `render_folders` reads the
 current value and saves on change: a list valued setting becomes an editable list, a
 single folder a field with a browse button.
+
+It also draws the two `SMSSeparator` rules, above and below itself. That is why the four
+action screens are split into three blocks and Settings, Appearance and Console are not:
+a screen with no folder to pick is one block and asks for no rule. Adding a rule
+elsewhere means gridding an `SMSSeparator` into its own row, never packing one into an
+existing one.
 
 Two screens may share one setting — Sort files and Remove empty folders both use
 `source_folders`. `SMSRenderer` therefore calls `refresh()` when a view becomes visible,

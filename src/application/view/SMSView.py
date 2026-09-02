@@ -7,6 +7,7 @@ from src.application.component.SMSFolderList import SMSFolderList
 from src.application.component.SMSInputWithLabel import SMSInputWithLabel
 from src.application.component.SMSLabel import SMSLabel
 from src.application.component.SMSScrollableFrame import SMSScrollableFrame
+from src.application.component.SMSSeparator import SMSSeparator
 from src.application.service.EventManager import EventManager
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.Typography import Typography
@@ -21,10 +22,12 @@ class SMSView(ABC, Frame):
     """
 
     ROW_TITLE = 0
-    ROW_FOLDERS = 1
-    ROW_TOOLBAR = 2
-    ROW_STATUS = 3
-    ROW_BODY = 4
+    ROW_TITLE_RULE = 1
+    ROW_FOLDERS = 2
+    ROW_FOLDERS_RULE = 3
+    ROW_TOOLBAR = 4
+    ROW_STATUS = 5
+    ROW_BODY = 6
 
     STATUS_MAX_LENGTH = 150
     PADDING = 32
@@ -92,8 +95,15 @@ class SMSView(ABC, Frame):
         self.folder_settings_repository = settings_repository
         self.folder_settings = settings
 
+        # The folder area is what separates the heading from the results, so it is
+        # the one bracketing the screen with its two rules. A screen without folders
+        # — Settings, Appearance, Console — is a single block and gets neither.
+        SMSSeparator(self, self.theme).grid(row=self.ROW_TITLE_RULE, column=0, sticky="ew", pady=(18, 0))
+
         self.folders = Frame(self, background=self.theme.background)
-        self.folders.grid(row=self.ROW_FOLDERS, column=0, sticky="ew", pady=(20, 0))
+        self.folders.grid(row=self.ROW_FOLDERS, column=0, sticky="ew", pady=(18, 0))
+
+        SMSSeparator(self, self.theme).grid(row=self.ROW_FOLDERS_RULE, column=0, sticky="ew", pady=(20, 0))
 
         self.__render_folder_settings()
 
