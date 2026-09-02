@@ -1,0 +1,26 @@
+# Infrastructure layer
+
+Where the outside world is allowed in: the filesystem, `settings.json`, the log file.
+
+## Rules
+
+- Every class here implements a `…Interface` from `src/domain/repository/`, and is bound
+  to it by an alias in `Main.py`. Adding a repository means adding the interface in the
+  domain first.
+- Keep these classes dumb: they read, write, move and list. Any decision — which file
+  goes where, what counts as a duplicate — belongs to a domain service.
+- These are the classes that actually delete user data. They get their own tests against
+  a temporary folder under `tests/`, created and removed in `setUp`/`tearDown`.
+
+## Repositories
+
+- `FileSystemRepository` — folders, moves and copies (`shutil`), and the listing of empty
+  folders. `list_empty_folders` returns folders **children first** and reports a folder
+  whose only content is empty folders, so removing the list in order works in one pass.
+- `FileInfoRepository` — reads file contents into `FileInfo`, and deletes files. It is
+  the one that applies the large file and empty file skipping rules.
+- `SettingsRepository` — `settings.json` next to the executable. `fetch_all` fills in
+  missing keys from `Settings.default_user_settings` and migrates settings written by
+  older versions; see the Settings section of the root `CLAUDE.md` before renaming one.
+- `TmpStorageRepository` — in memory hand off between a view's "analyse" and "run" steps.
+  Not persistence, do not make it one.
