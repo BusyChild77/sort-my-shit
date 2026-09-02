@@ -3,6 +3,9 @@
 .packaged/dist/
 .packaged/spec/
 
+# Python bytecode
+__pycache__/
+
 # Local venv
 .virtual
 
