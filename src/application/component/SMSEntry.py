@@ -13,6 +13,7 @@ class SMSEntry(Frame):
         theme: Theme,
         string_var: StringVar,
         width: int = 50,
+        state: str = "normal",
     ):
         super().__init__(
             master=container,
@@ -37,6 +38,7 @@ class SMSEntry(Frame):
             highlightthickness=0,
             width=width,
             font=Typography.BODY,
+            state=state,
         )
         self.entry.grid(row=0, column=0, sticky="ew", ipady=6, ipadx=8)
 

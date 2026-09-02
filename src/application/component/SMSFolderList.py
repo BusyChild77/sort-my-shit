@@ -1,7 +1,8 @@
-from tkinter import Frame, filedialog
+from tkinter import Frame, StringVar, filedialog
 from typing import Callable
 
 from src.application.component.SMSButton import SMSButton
+from src.application.component.SMSEntry import SMSEntry
 from src.application.component.SMSLabel import SMSLabel
 from src.application.service.Typography import Typography
 from src.domain.entity.Theme import Theme
@@ -10,7 +11,7 @@ from src.domain.entity.Theme import Theme
 class SMSFolderList(Frame):
     """Editable list of folders: add through a file dialog, remove per row."""
 
-    ROW_HEIGHT = 36
+    FIELD_WIDTH = 20
 
     def __init__(
         self,
@@ -25,6 +26,8 @@ class SMSFolderList(Frame):
         self.theme = theme
         self.folders = list(folders)
         self.on_change = on_change
+        # Tk drops a variable that nothing references, blanking the field it feeds.
+        self.folder_vars = []
 
         SMSLabel(
             container=self,
@@ -69,6 +72,8 @@ class SMSFolderList(Frame):
         for child in list(self.rows.children.values()):
             child.destroy()
 
+        self.folder_vars.clear()
+
         if not self.folders:
             SMSLabel(
                 container=self.rows,
@@ -83,30 +88,21 @@ class SMSFolderList(Frame):
             self.__create_row(folder).grid(row=row, column=0, sticky="ew", pady=3)
 
     def __create_row(self, folder: str) -> Frame:
-        """The path in its own box, the button beside it rather than inside — the same
-        shape as the browse button next to a folder field."""
+        """The very field the folder browser uses, read only, with the button beside it
+        rather than inside — so a listed folder and a browsed one read identically."""
         row = Frame(self.rows, background=self.theme.background)
         row.columnconfigure(0, weight=1)
 
-        path = Frame(
-            row,
-            background=self.theme.elevated,
-            highlightbackground=self.theme.border,
-            highlightthickness=1,
-            height=self.ROW_HEIGHT,
-            padx=12,
-        )
-        path.grid_propagate(0)
-        path.columnconfigure(0, weight=1)
-        path.grid(row=0, column=0, sticky="ew")
+        folder_var = StringVar(value=folder)
+        self.folder_vars.append(folder_var)
 
-        SMSLabel(
-            container=path,
-            text=folder,
-            bg=self.theme.elevated,
-            fg=self.theme.text,
-            font=Typography.SMALL,
-        ).grid(row=0, column=0, sticky="w")
+        SMSEntry(
+            container=row,
+            theme=self.theme,
+            string_var=folder_var,
+            width=self.FIELD_WIDTH,
+            state="readonly",
+        ).grid(row=0, column=0, sticky="ew")
 
         SMSButton(
             container=row,
