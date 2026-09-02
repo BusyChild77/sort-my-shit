@@ -2,6 +2,9 @@ from unittest import TestLoader, TestSuite, TextTestRunner
 
 from tests.application.service.IconProviderTest import IconProviderTest
 from tests.domain.entity.ThemeTest import ThemeTest
+from tests.domain.entity.VersionTest import VersionTest
+from tests.domain.service.ApplyUpdateTest import ApplyUpdateTest
+from tests.domain.service.CheckForUpdateTest import CheckForUpdateTest
 from tests.domain.service.CompareBinaryTest import BinaryComparatorTest
 from tests.domain.service.CompareFileNameTest import FileNameComparatorTest
 from tests.domain.service.ListDuplicateTest import ListDuplicateTest
@@ -18,6 +21,9 @@ from tests.infrastructure.repository.SettingsRepositoryTest import SettingsRepos
 test_cases = [
     IconProviderTest,
     ThemeTest,
+    VersionTest,
+    ApplyUpdateTest,
+    CheckForUpdateTest,
     BinaryComparatorTest,
     FileNameComparatorTest,
     ListDuplicateTest,

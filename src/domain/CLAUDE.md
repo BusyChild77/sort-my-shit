@@ -19,7 +19,7 @@ The business logic, and the only layer with no dependency on anything else in th
   `Theme` is the exception and owns its color maths, because that is what a palette is.
 - `event/` — the `EventManagerInterface` used to report progress.
 - `repository/` — the interfaces the infrastructure layer implements.
-- `service/` — one folder per verb: `compare/`, `list/`, `remove/`, `sort/`.
+- `service/` — one folder per verb: `compare/`, `list/`, `remove/`, `sort/`, `update/`.
 
 ## Sorting
 
@@ -38,6 +38,16 @@ Three collaborators, deliberately kept apart:
 
 Keep that split. Anything deciding *where a file goes* belongs in `PlanSort`, anything
 *doing it* belongs in `SortFile`.
+
+## Updating
+
+`CheckForUpdate` decides, `ApplyUpdate` executes — the same split as `PlanSort` and
+`SortFile`. `look()` answers with one of `AVAILABLE`, `UP_TO_DATE`, `UNREACHABLE` or
+`NOT_UPDATABLE`; collapsing the last three into "nothing to do" would tell a user with no
+network that they are up to date.
+
+`Version` compares as numbers, never as strings, so `1.0.10` beats `1.0.9`, and anything
+unreadable parses to `0.0.0` — a malformed tag is never newer than what is running.
 
 ## Progress reporting
 
