@@ -24,6 +24,13 @@ Where the outside world is allowed in: the filesystem, `settings.json`, the log 
   older versions; see the Settings section of the root `CLAUDE.md` before renaming one.
 - `TmpStorageRepository` — in memory hand off between a view's "analyse" and "run" steps.
   Not persistence, do not make it one.
+- `GitHubReleaseRepository` — the releases feed and the download. **Every failure returns
+  `None`** rather than raising: no network is the normal case for a desktop app, not an
+  error to shout about.
+- `InstallationRepository` — what the running copy is, and how to swap it. Each platform
+  defends its executable differently: an AppImage is the file `$APPIMAGE` points at,
+  Windows refuses to *delete* a running `.exe` but allows *renaming* it, so the outgoing
+  version is moved to `.old` and swept up by the next update.
 
 ## RunDirectory
 
