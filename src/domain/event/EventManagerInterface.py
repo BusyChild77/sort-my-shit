@@ -8,5 +8,9 @@ class EventManagerInterface(ABC):
         pass
 
     @abstractmethod
+    def unsubscribe(self, event_name: str, listener: Callable):
+        pass
+
+    @abstractmethod
     def trigger(self, event_name: str, *args, **kwargs):
         pass

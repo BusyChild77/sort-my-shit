@@ -1,29 +1,36 @@
 from tkinter import Checkbutton
 
+from src.application.service.Typography import Typography
+from src.domain.entity.Theme import Theme
+
 
 class SMSCheckButton(Checkbutton):
     def __init__(
         self,
         container,
-        text,
+        theme: Theme,
+        text: str,
         variable,
         command,
-        bg: str,
-        fg: str,
-        padx=10,
-        pady=10,
+        padx: int = 0,
+        pady: int = 6,
     ):
         super().__init__(
             container,
             text=text,
             variable=variable,
             command=command,
-            background=bg,
-            fg=fg,
-            border=None,
+            background=theme.background,
+            activebackground=theme.background,
+            fg=theme.text,
+            activeforeground=theme.text,
+            selectcolor=theme.elevated,
+            border=0,
             borderwidth=0,
             highlightthickness=0,
+            anchor="w",
+            cursor="hand2",
             padx=padx,
             pady=pady,
-            font=("Arial", 14),
+            font=Typography.BODY,
         )

@@ -1,16 +1,19 @@
-from tkinter import Tk, Label, StringVar
+from tkinter import Label, StringVar
+
+from src.application.service.Typography import Typography
 
 
 class SMSLabel(Label):
     def __init__(
         self,
-        container: Tk,
+        container,
         text: str,
         bg: str,
         fg: str,
-        font: str = ("Arial", 14),
-        padx: int = 10,
-        pady: int = 10
+        font: tuple = None,
+        padx: int = 0,
+        pady: int = 0,
+        anchor: str = "w",
     ):
         self.text_variable = StringVar(container, text)
 
@@ -19,12 +22,13 @@ class SMSLabel(Label):
             bg=bg,
             fg=fg,
             textvariable=self.text_variable,
-            text=text,
             padx=padx,
             pady=pady,
-            font=font,
+            anchor=anchor,
+            justify="left",
+            font=font or Typography.BODY,
         )
 
     def set_text(self, text: str):
         self.text_variable.set(text)
-        self.update()
+        self.update_idletasks()

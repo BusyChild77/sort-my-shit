@@ -1,61 +1,51 @@
-from tkinter import Tk, StringVar, Frame, filedialog
+from tkinter import Frame, StringVar, filedialog
 
+from src.application.component.SMSButton import SMSButton
 from src.application.component.SMSEntry import SMSEntry
 from src.application.component.SMSLabel import SMSLabel
-from src.application.component.SMSButton import SMSButton
+from src.domain.entity.Theme import Theme
 
 
 class SMSInputWithLabel(Frame):
+    """A labelled folder field with a browse button."""
+
     def __init__(
         self,
-        container: Tk,
+        container,
+        theme: Theme,
         text: str,
-        entry_bg: str,
-        bg: str,
-        fg: str,
         setting_var: StringVar,
+        width: int = 20,
     ):
-        super().__init__(
-            master=container,
-            padx=10,
-            pady=10,
-            background=bg,
-            width=800,
-            height=50,
-        )
-
-        self.rowconfigure(0, weight=1)
+        super().__init__(master=container, background=theme.background)
         self.columnconfigure(0, weight=1)
-        self.grid_propagate(0)
 
         SMSLabel(
             container=self,
-            bg=bg,
-            fg=fg,
-            text=text
-        ).grid(row=0, column=0, sticky="w")
-
-        SMSButton(
-            container=self,
-            text="...",
-            width=5,
-            height=1,
-            bg=bg,
-            fg=fg,
-            border_color=entry_bg,
-            command=lambda setting_var=setting_var: setting_var.set(
-                filedialog.askdirectory(
-                    initialdir="~/",
-                    title="Select a Directory",
-                )
-            )
-        ).grid(row=0, column=1)
+            bg=theme.background,
+            fg=theme.text,
+            text=text,
+        ).grid(row=0, column=0, sticky="w", pady=(0, 4))
 
         SMSEntry(
             container=self,
-            bg=entry_bg,
-            fg=fg,
-            border_color=fg,
+            theme=theme,
             string_var=setting_var,
-            width=50
-        ).grid(row=0, column=2, sticky="e")
+            width=width,
+        ).grid(row=1, column=0, sticky="ew")
+
+        SMSButton(
+            container=self,
+            theme=theme,
+            text="Browse",
+            variant="ghost",
+            width=8,
+            command=lambda: self.__browse(setting_var),
+        ).grid(row=1, column=1, sticky="e", padx=(10, 0))
+
+    @staticmethod
+    def __browse(setting_var: StringVar):
+        folder = filedialog.askdirectory(initialdir="~/", title="Select a directory")
+
+        if folder:
+            setting_var.set(folder)

@@ -1,22 +1,19 @@
-from tkinter import Tk
-
-from src.application.component.SMSButton import SMSButton
-from src.application.component.SMSButtonContainer import SMSButtonContainer
-from src.application.component.SMSLabel import SMSLabel
-from src.application.component.SMSScrollableFrame import SMSScrollableFrame
-from src.application.component.SMSEmptyFileCard import SMSEmptyFileCard
+from src.application.component.SMSFileCard import SMSFileCard
+from src.application.service.EventManager import EventManager
+from src.application.service.ThemeProvider import ThemeProvider
 from src.application.view.SMSView import SMSView
-from src.domain.entity.FileInfo import FileInfo
 from src.domain.service.remove.RemoveEmptyFile import RemoveEmptyFile
 from src.infrastructure.repository.SettingsRepository import SettingsRepository
 from src.infrastructure.repository.TmpStorageRepository import TmpStorageRepository
-from src.application.service.EventManager import EventManager
 
 
 class RemoveEmptyFilesView(SMSView):
+    STORAGE_KEY = "empty_files"
+
     def __init__(
         self,
-        container: Tk,
+        container,
+        theme_provider: ThemeProvider,
         settings_repository: SettingsRepository,
         remove_empty_file: RemoveEmptyFile,
         tmp_storage_repository: TmpStorageRepository,
@@ -25,99 +22,43 @@ class RemoveEmptyFilesView(SMSView):
         self.settings_repository = settings_repository
         self.remove_empty_file = remove_empty_file
         self.tmp_storage_repository = tmp_storage_repository
-        self.event_manager = event_manager
 
-        self.color1 = self.settings_repository.fetch_one("color1")
-        self.color2 = self.settings_repository.fetch_one("color2")
-        self.color3 = self.settings_repository.fetch_one("color3")
-        self.color4 = self.settings_repository.fetch_one("color4")
-
-        super().__init__(
-            container=container,
-            bg=self.settings_repository.fetch_one("color1")
-        )
+        super().__init__(container, theme_provider, event_manager)
 
         self.create_view()
 
     def create_view(self):
-        self.event_manager.subscribe("status", self.__change_current_state)
-
-        self.current_state = SMSLabel(
-            container=self,
-            fg=self.color4,
-            bg=self.color1,
-            text="Idle",
+        self.render_title(
+            "Remove empty files",
+            "Zero byte files found in the folder below.",
         )
-        self.current_state.grid(column=0, row=2, sticky='w', columnspan=2)
-
-        SMSLabel(
-            container=self,
-            bg=self.color1,
-            fg=self.color4,
-            text="Remove Empty Files",
-            font=("Arial", 24)
-        ).grid(row=0, column=0, sticky='w')
-
-        self.empty_files_list_display = SMSScrollableFrame(self, self.color1)
-        self.empty_files_list_display.grid(row=1, column=1, sticky='nse')
-
-        action_buttons = SMSButtonContainer(
-            container=self,
-            bg=self.color1,
-            direction="vertical",
-            padx=15,
-            height=200,
-            width=400,
-            button_spacing_y=10,
-        )
-        action_buttons.set_buttons(
-            [
-                self.__create_button(
-                    container=action_buttons,
-                    text="Launch Analysis",
-                    command=self.__list_empty_files,
-                ),
-                self.__create_button(
-                    container=action_buttons,
-                    text="Run Empty Files Removal",
-                    command=self.__remove_empty_files,
-                )
-            ]
-        )
-        action_buttons.grid(row=1, column=0, sticky='nw', pady=5)
+        self.render_folders(self.settings_repository, {"remove_duplicates_folder": "Folder to process"})
+        self.render_toolbar([
+            ("Launch analysis", self.__list_empty_files, "ghost"),
+            ("Run empty files removal", self.__remove_empty_files, "primary"),
+        ])
+        self.render_status()
+        self.render_body("Launch an analysis to list the empty files found in this folder.")
 
     def __list_empty_files(self):
         empty_files = self.remove_empty_file.list_empty_files()
-        empty_files: list[FileInfo]
-        row = 0
-        for empty_file in empty_files:
-            SMSEmptyFileCard(
-                self.empty_files_list_display.get_interior(),
-                bg=self.color1,
-                fg=self.color4,
-                border_color=self.color2,
-                text=empty_file.file_name,
-            ).grid(row=row, column=0, sticky='w')
-            row += 1
 
-        self.tmp_storage_repository.save_one("empty_files", empty_files)
-
-    def __remove_empty_files(self):
-        duplicateMatches = self.tmp_storage_repository.fetch_one("empty_files")
-        self.remove_empty_file.remove_empty_files(duplicateMatches)
-        self.empty_files_list_display.reload()
-        self.tmp_storage_repository.remove_one("empty_files")
-
-    def __create_button(self, container, text, command):
-        return SMSButton(
-            container=container,
-            text=text,
-            bg=self.color2,
-            fg=self.color4,
-            border_color=self.color2,
-            command=command
+        self.render_results(
+            empty_files,
+            lambda empty_file: SMSFileCard(
+                self.body.get_interior(),
+                theme=self.theme,
+                text=empty_file.full_path,
+                badge="empty file",
+            ),
         )
 
-    def __change_current_state(self, text: str, max_length: int = 150):
-        text = text[:max_length - 3] + "..." if len(text) > max_length else text
-        self.current_state.set_text(text)
+        self.tmp_storage_repository.save_one(self.STORAGE_KEY, empty_files)
+
+    def __remove_empty_files(self):
+        if not self.tmp_storage_repository.has(self.STORAGE_KEY):
+            self.__list_empty_files()
+
+        self.remove_empty_file.remove_empty_files(self.tmp_storage_repository.fetch_one(self.STORAGE_KEY))
+        self.render_results([], None)
+        self.tmp_storage_repository.remove_one(self.STORAGE_KEY)

@@ -1,60 +1,54 @@
 from tkinter import Frame
 
 from src.application.component.SMSLabel import SMSLabel
-from src.domain.entity.FileInfo import FileInfo
+from src.application.service.Typography import Typography
 from src.domain.entity.DuplicateMatch import DuplicateMatch
+from src.domain.entity.FileInfo import FileInfo
+from src.domain.entity.Theme import Theme
 
 
 class SMSComparisonCard(Frame):
+    """A kept file next to the duplicates that will be removed."""
+
     def __init__(
         self,
         master,
+        theme: Theme,
         duplicate_match: DuplicateMatch,
-        bg: str,
-        fg: str,
-        border_color: str,
     ):
         super().__init__(
             master,
-            background=bg,
+            background=theme.elevated,
+            highlightbackground=theme.border,
+            highlightthickness=1,
+            padx=14,
+            pady=12,
         )
-        self.fg = fg
-        self.bg = bg
-        self.border_color = border_color
+        self.theme = theme
+        self.columnconfigure(1, weight=1)
 
-        SMSLabel(
-            self,
-            text="Kept File",
-            bg=self.bg,
-            fg=self.fg,
-            font=("Arial", 14),
-        ).grid(padx=10, pady=10, row=0, column=0, sticky='w')
+        self.__create_column_title("Kept file").grid(row=0, column=0, sticky="w")
+        self.__create_column_title("Duplicates").grid(row=0, column=1, sticky="w", padx=(24, 0))
 
-        SMSLabel(
-            self,
-            text="Duplicates",
-            bg=self.bg,
-            fg=self.fg,
-            font=("Arial", 14),
-        ).grid(padx=10, pady=10, row=0, column=1, sticky='w')
+        self.__create_file_line(duplicate_match.duplicate_of).grid(row=1, column=0, sticky="w", pady=2)
 
-        self.__create_comparison_card(duplicate_match.duplicate_of).grid(padx=10, pady=5, row=1, column=0)
-        row: int = 1
-        for file in duplicate_match.files:
-            self.__create_comparison_card(file).grid(padx=10, pady=5, row=row, column=1)
-            row += 1
+        for row, file in enumerate(duplicate_match.files, start=1):
+            self.__create_file_line(file).grid(row=row, column=1, sticky="w", padx=(24, 0), pady=2)
 
-    def __create_comparison_card(self, file: FileInfo):
-        text_container = Frame(self, width=570, height=40, background=self.border_color)
-        text_container.grid_propagate(0)
-        text_container.grid(row=0, column=0, padx=10, pady=10, sticky='w')
+    def __create_column_title(self, text: str) -> SMSLabel:
+        return SMSLabel(
+            container=self,
+            text=text,
+            bg=self.theme.elevated,
+            fg=self.theme.muted,
+            font=Typography.SMALL,
+        )
 
-        SMSLabel(
-            text_container,
+    def __create_file_line(self, file: FileInfo) -> SMSLabel:
+        return SMSLabel(
+            container=self,
             text=file.file_name,
-            bg=self.border_color,
-            fg=self.fg,
-            font=("Arial", 12),
-        ).grid(row=0, column=0, sticky='w')
-
-        return text_container
+            bg=self.theme.elevated,
+            fg=self.theme.text,
+            font=Typography.BODY,
+        )

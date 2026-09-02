@@ -1,39 +1,36 @@
-from tkinter import Tk, Frame
+from tkinter import Frame
+
+from src.domain.entity.Theme import Theme
 
 
 class SMSButtonContainer(Frame):
     def __init__(
         self,
-        container: Tk,
-        height: int,
-        width: int,
-        bg: str,
+        container,
+        theme: Theme,
         direction: str = "horizontal",
-        padx: int = 0,
-        pady: int = 0,
-        button_spacing_x: int = 0,
-        button_spacing_y: int = 0,
+        spacing: int = 10,
     ):
         super().__init__(
             master=container,
-            height=height,
-            width=width,
             border=0,
             borderwidth=0,
-            bg=bg,
-            padx=padx,
-            pady=pady,
+            highlightthickness=0,
+            bg=theme.background,
         )
 
         self.direction = direction
-        self.button_spacing_x = button_spacing_x
-        self.button_spacing_y = button_spacing_y
+        self.spacing = spacing
 
     def set_buttons(self, buttons: list):
         for index, button in enumerate(buttons):
+            is_last = index == len(buttons) - 1
+            gap = 0 if is_last else self.spacing
+
             button.grid(
                 row=index if self.direction == "vertical" else 0,
                 column=index if self.direction == "horizontal" else 0,
-                padx=(0, self.button_spacing_x) if self.direction == "horizontal" else self.button_spacing_x,
-                pady=(0, self.button_spacing_y) if self.direction == "vertical" else self.button_spacing_y,
+                sticky="w",
+                padx=(0, gap) if self.direction == "horizontal" else 0,
+                pady=(0, gap) if self.direction == "vertical" else 0,
             )

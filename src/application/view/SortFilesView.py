@@ -1,90 +1,95 @@
-from tkinter import Tk
+from tkinter import messagebox
 
-from src.application.component.SMSButton import SMSButton
-from src.application.component.SMSButtonContainer import SMSButtonContainer
-from src.application.component.SMSLabel import SMSLabel
-from src.application.view.SMSView import SMSView
-from src.infrastructure.repository.SettingsRepository import SettingsRepository
+from src.application.component.SMSTransferCard import SMSTransferCard
 from src.application.service.EventManager import EventManager
+from src.application.service.ThemeProvider import ThemeProvider
+from src.application.view.SMSView import SMSView
 from src.domain.service.sort.SortFile import SortFile
+from src.infrastructure.repository.SettingsRepository import SettingsRepository
+from src.infrastructure.repository.TmpStorageRepository import TmpStorageRepository
 
 
 class SortFilesView(SMSView):
+    PLAN_STORAGE_KEY = "sort_operations"
+
     def __init__(
         self,
-        container: Tk,
+        container,
+        theme_provider: ThemeProvider,
         settings_repository: SettingsRepository,
         sort_files: SortFile,
+        tmp_storage_repository: TmpStorageRepository,
         event_manager: EventManager,
     ):
         self.settings_repository = settings_repository
         self.sort_files = sort_files
-        self.event_manager = event_manager
+        self.tmp_storage_repository = tmp_storage_repository
 
-        self.color1 = self.settings_repository.fetch_one("color1")
-        self.color2 = self.settings_repository.fetch_one("color2")
-        self.color3 = self.settings_repository.fetch_one("color3")
-        self.color4 = self.settings_repository.fetch_one("color4")
-
-        super().__init__(
-            container=container,
-            bg=self.settings_repository.fetch_one("color1")
-        )
+        super().__init__(container, theme_provider, event_manager)
 
         self.create_view()
 
     def create_view(self):
-        self.event_manager.subscribe("status", self.__change_current_state)
-
-        self.current_state = SMSLabel(
-            container=self,
-            fg=self.color4,
-            bg=self.color1,
-            text="Idle",
+        self.render_title(
+            "Sort files by type",
+            "Files are copied or moved from every source folder into the destination folder.",
         )
-        self.current_state.grid(column=0, row=2, sticky='w', columnspan=2)
+        self.render_folders(self.settings_repository, {
+            "source_folders": "Folders to sort",
+            "destination_folder": "Destination folder",
+        })
+        self.render_toolbar([
+            ("Preview sort", self.__preview_sort, "ghost"),
+            ("Run sort", self.__run_sort, "primary"),
+        ])
+        self.render_status()
+        self.render_body("Preview a sort to see exactly which file lands where.")
 
-        SMSLabel(
-            container=self,
-            bg=self.color1,
-            fg=self.color4,
-            text="Sort Files By Type",
-            font=("Arial", 24)
-        ).grid(row=0, column=0, sticky='w')
+    def __preview_sort(self):
+        operations = self.sort_files.plan_sort()
+        self.tmp_storage_repository.save_one(self.PLAN_STORAGE_KEY, operations)
+        self.__display(operations)
 
-        action_buttons = SMSButtonContainer(
-            container=self,
-            bg=self.color1,
-            direction="vertical",
-            padx=15,
-            height=200,
-            width=400,
-            button_spacing_y=10,
+        return operations
+
+    def __run_sort(self):
+        operations = self.__planned_operations()
+
+        if len(operations) == 0:
+            messagebox.showinfo("Sort files", "Nothing to sort in the configured source folders.")
+            return
+
+        if not self.__confirmed(operations):
+            return
+
+        self.sort_files.sort(operations)
+        self.tmp_storage_repository.remove_one(self.PLAN_STORAGE_KEY)
+        self.render_results([], None)
+
+    def __planned_operations(self) -> list:
+        if self.tmp_storage_repository.has(self.PLAN_STORAGE_KEY):
+            return self.tmp_storage_repository.fetch_one(self.PLAN_STORAGE_KEY)
+
+        return self.__preview_sort()
+
+    def __confirmed(self, operations: list) -> bool:
+        if not self.settings_repository.fetch_one("preview_before_sorting"):
+            return True
+
+        action = "copied" if self.settings_repository.fetch_one("keep_original_files") else "moved"
+
+        return messagebox.askyesno(
+            "Sort files",
+            f"{len(operations)} file(s) will be {action} into "
+            f"{self.settings_repository.fetch_one('destination_folder')}.\n\nProceed?",
         )
-        action_buttons.set_buttons(
-            [
-                self.__create_button(
-                    container=action_buttons,
-                    text="Sort Files",
-                    command=self.__sort_files,
-                )
-            ]
+
+    def __display(self, operations: list):
+        self.render_results(
+            operations,
+            lambda operation: SMSTransferCard(
+                self.body.get_interior(),
+                theme=self.theme,
+                operation=operation,
+            ),
         )
-        action_buttons.grid(row=1, column=0, sticky='nw', pady=5)
-
-    def __sort_files(self):
-        self.sort_files.move_files_to_sorted_folder()
-
-    def __create_button(self, container, text, command):
-        return SMSButton(
-            container=container,
-            text=text,
-            bg=self.color2,
-            fg=self.color4,
-            border_color=self.color2,
-            command=command
-        )
-
-    def __change_current_state(self, text: str, max_length: int = 150):
-        text = text[:max_length - 3] + "..." if len(text) > max_length else text
-        self.current_state.set_text(text)
