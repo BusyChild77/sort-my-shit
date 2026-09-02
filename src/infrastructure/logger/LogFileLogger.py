@@ -19,6 +19,9 @@ class LogFileLogger:
         self.event_manager.subscribe("output", self.log_in_file)
 
     def log_in_file(self, log_message):
+        if not self.settings_repository.fetch_one("log_output_in_file"):
+            return
+
         log_dir = os_path.join(self.settings_repository.runDir, "log")
         log_file = os_path.join(log_dir, "log.txt")
 
