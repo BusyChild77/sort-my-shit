@@ -29,9 +29,12 @@ class ListDuplicate:
 
         duplicate_matches = []
 
-        all_files = self.file_info_repository.fetch_all_from_folder(
-            self.settings_repository.fetch_one("remove_duplicates_folder")
-        )
+        all_files = []
+
+        # Every folder into one list, so a file in one folder is matched against a copy
+        # of itself sitting in another.
+        for folder in self.settings_repository.fetch_one("remove_duplicates_folders"):
+            all_files += self.file_info_repository.fetch_all_from_folder(folder)
 
         self.event_manager.trigger("status", "Processing files")
 

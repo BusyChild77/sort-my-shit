@@ -33,9 +33,9 @@ class RemoveDuplicatesView(SMSView):
     def create_view(self):
         self.render_title(
             "Remove duplicates",
-            "Files are compared inside the folder below, contents first when binary comparison is on.",
+            "Files are compared across every folder below, contents first when binary comparison is on.",
         )
-        self.render_folders(self.settings_repository, {"remove_duplicates_folder": "Folder to process"})
+        self.render_folders(self.settings_repository, {"remove_duplicates_folders": "Folders to process"})
         self.render_toolbar([
             ("Launch analysis", self.__list_duplicates, "ghost"),
             ("Run duplicate removal", self.__remove_duplicates, "primary"),

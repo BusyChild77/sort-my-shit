@@ -31,7 +31,7 @@ class Settings:
         "theme": Theme.PRESETS[Theme.DEFAULT_PRESET],
         "source_folders": ["/path/to/folder/to/sort"],
         "destination_folder": "/path/to/destination/folder",
-        "remove_duplicates_folder": "/path/to/destination/folder",
+        "remove_duplicates_folders": ["/path/to/folder/to/process"],
         "preserve_folder_tree": False,
         "keep_original_files": True,
         "delete_empty_source_folders": False,
@@ -48,7 +48,15 @@ class Settings:
     # Settings renamed since version 1: {legacy name: current name}
     renamed_user_settings = {
         "folder_to_process": "source_folders",
+        "remove_duplicates_folder": "remove_duplicates_folders",
     }
+
+    # Settings holding a list of folders. Each was a single folder once, so a value read
+    # as a string is the older shape and becomes a one folder list.
+    folder_list_user_settings = (
+        "source_folders",
+        "remove_duplicates_folders",
+    )
 
     # Flat theme colors used before the "theme" setting: {legacy name: theme color}
     legacy_theme_colors = {

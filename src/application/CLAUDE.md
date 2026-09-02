@@ -48,7 +48,8 @@ elsewhere means gridding an `SMSSeparator` into its own row, never packing one i
 existing one.
 
 Two screens may share one setting — Sort files and Remove empty folders both use
-`source_folders`. `SMSRenderer` therefore calls `refresh()` when a view becomes visible,
+`source_folders`, Remove duplicates and Remove empty files both use
+`remove_duplicates_folders`. `SMSRenderer` therefore calls `refresh()` when a view becomes visible,
 which rebuilds its folder area from the saved settings. A view that caches a folder value
 anywhere else will go stale.
 

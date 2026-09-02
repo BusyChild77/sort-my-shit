@@ -50,7 +50,7 @@ class ListDuplicateTest(TestCase):
         super().tearDown()
 
     def test_given_two_files_with_same_content_when_comparing_files_then_a_duplicate_match_is_returned(self):
-        self.settings_repository_mock.fetch_one.return_value = True
+        self._given_settings(["/downloads"], binary_search=True)
         self.binary_comparator_mock.compare.side_effect = False, True, True, False
         self.file_info_repository_mock.fetch_all_from_folder.return_value = [self.file_info1, self.file_info2, self.file_info3]
 
@@ -60,7 +60,7 @@ class ListDuplicateTest(TestCase):
         self.assertEqual(duplicates[0].duplicate_of, self.file_info1)
 
     def test_given_two_files_with_same_name_when_comparing_names_then_a_duplicate_match_holding_a_file_list_is_returned(self):
-        self.settings_repository_mock.fetch_one.return_value = False
+        self._given_settings(["/downloads"], binary_search=False)
         self.file_name_comparator_mock.compare.side_effect = False, True, True, False
         self.file_info_repository_mock.fetch_all_from_folder.return_value = [self.file_info1, self.file_info2, self.file_info3]
 
@@ -68,6 +68,33 @@ class ListDuplicateTest(TestCase):
 
         self.assertEqual(duplicates[0].files, [self.file_info2, self.file_info3])
         self.assertEqual(duplicates[0].duplicate_of, self.file_info1)
+
+    def test_given_several_folders_when_listing_duplicates_then_every_one_of_them_is_scanned(self):
+        self._given_settings(["/downloads", "/desktop"], binary_search=True)
+        self.binary_comparator_mock.compare.return_value = False
+        self.file_info_repository_mock.fetch_all_from_folder.side_effect = [[self.file_info1], [self.file_info2]]
+
+        self.list_duplicate.list_duplicates()
+
+        self.assertEqual(
+            [call[0][0] for call in self.file_info_repository_mock.fetch_all_from_folder.call_args_list],
+            ["/downloads", "/desktop"],
+        )
+
+    def test_given_a_copy_in_another_folder_when_listing_duplicates_then_it_is_found(self):
+        """The whole point of several folders: the same file sitting in two of them."""
+        self._given_settings(["/downloads", "/desktop"], binary_search=True)
+        self.binary_comparator_mock.compare.side_effect = False, True
+        self.file_info_repository_mock.fetch_all_from_folder.side_effect = [[self.file_info1], [self.file_info2]]
+
+        duplicates = self.list_duplicate.list_duplicates()
+
+        self.assertEqual(duplicates[0].files, [self.file_info2])
+        self.assertEqual(duplicates[0].duplicate_of, self.file_info1)
+
+    def _given_settings(self, folders: list, binary_search: bool):
+        settings = {"remove_duplicates_folders": folders, "binary_search": binary_search}
+        self.settings_repository_mock.fetch_one.side_effect = lambda name: settings[name]
 
     def _create_file(self, file_path, file_contents):
         with open(file_path, "w") as file:

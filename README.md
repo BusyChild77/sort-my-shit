@@ -24,7 +24,8 @@ Every push to `main` publishes a build, on the
 - Choose whether the source files are **kept (copied) or moved**, and whether the source
   folders left empty are deleted.
 - Never overwrites: a file whose name is already taken in the destination is numbered.
-- Remove duplicate files, by binary comparison or by filename.
+- Remove duplicate files, by binary comparison or by filename, **across several folders at
+  once**, so a copy sitting in another folder is found too.
 - Remove empty files and empty folders, including folders holding only empty folders.
 - **Customisable interface**: four built-in themes, and a color picker for each interface
   color, applied live.
@@ -83,13 +84,14 @@ runs from — the settings go to the usual place for the platform instead
 Settings written by an older version are migrated automatically.
 
 **The folders each action works on are picked on that action's own screen**, so you can
-change them without leaving what you are doing:
+change them without leaving what you are doing. Every one of them takes **as many folders
+as you like**, except the sort destination — there is only one place files land:
 
 | Folder | Picked on |
 | --- | --- |
 | `source_folders` | **Sort files** and **Remove empty folders** |
 | `destination_folder` | **Sort files** |
-| `remove_duplicates_folder` | **Remove duplicates** and **Remove empty files** |
+| `remove_duplicates_folders` | **Remove duplicates** and **Remove empty files** |
 
 The **Settings** screen holds the options that change how an action behaves:
 

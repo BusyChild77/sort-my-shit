@@ -22,10 +22,10 @@ class RemoveEmptyFile:
 
         empty_files = []
 
-        all_files = self.file_info_repository.fetch_all_from_folder(
-            self.settings_repository.fetch_one("remove_duplicates_folder"),
-            skip_empty_files=False,
-        )
+        all_files = []
+
+        for folder in self.settings_repository.fetch_one("remove_duplicates_folders"):
+            all_files += self.file_info_repository.fetch_all_from_folder(folder, skip_empty_files=False)
 
         file: FileInfo
         for file in all_files:

@@ -47,6 +47,24 @@ class SettingsRepositoryTest(TestCase):
         self.assertEqual(settings["source_folders"], ["/downloads"])
         self.assertNotIn("folder_to_process", settings)
 
+    def test_given_settings_with_a_single_duplicates_folder_when_fetching_settings_then_it_becomes_a_list(self):
+        """The folder someone picked before the screen took several must survive, under
+        its new name and in its new shape."""
+        self.__given_settings({"remove_duplicates_folder": "/downloads"})
+
+        settings = self.settings_repository.fetch_all()
+
+        self.assertEqual(settings["remove_duplicates_folders"], ["/downloads"])
+        self.assertNotIn("remove_duplicates_folder", settings)
+
+    def test_given_settings_already_holding_a_list_of_duplicates_folders_when_fetching_them_then_they_are_untouched(self):
+        self.__given_settings({"remove_duplicates_folders": ["/downloads", "/desktop"]})
+
+        self.assertEqual(
+            self.settings_repository.fetch_one("remove_duplicates_folders"),
+            ["/downloads", "/desktop"],
+        )
+
     def test_given_settings_from_a_version_with_flat_colors_when_fetching_settings_then_they_become_a_theme(self):
         self.__given_settings({
             "color1": "#000001",

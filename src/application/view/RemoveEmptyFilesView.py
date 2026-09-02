@@ -30,9 +30,9 @@ class RemoveEmptyFilesView(SMSView):
     def create_view(self):
         self.render_title(
             "Remove empty files",
-            "Zero byte files found in the folder below.",
+            "Zero byte files found in the folders below.",
         )
-        self.render_folders(self.settings_repository, {"remove_duplicates_folder": "Folder to process"})
+        self.render_folders(self.settings_repository, {"remove_duplicates_folders": "Folders to process"})
         self.render_toolbar([
             ("Launch analysis", self.__list_empty_files, "ghost"),
             ("Run empty files removal", self.__remove_empty_files, "primary"),

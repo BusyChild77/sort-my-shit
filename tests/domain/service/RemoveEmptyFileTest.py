@@ -17,10 +17,11 @@ class RemoveEmptyFileTest(TestCase):
         self.file_info1 = self._create_file(root_folder + "/filetest.txt", "")
 
         self.file_info_repository = Mock(FileInfoRepositoryInterface)
+        self.settings_repository = Mock(SettingsRepositoryInterface)
 
         self.remove_empty_file = RemoveEmptyFile(
             Mock(EventManagerInterface),
-            Mock(SettingsRepositoryInterface),
+            self.settings_repository,
             self.file_info_repository
         )
 
@@ -35,6 +36,28 @@ class RemoveEmptyFileTest(TestCase):
     def test_given_empty_file_when_removing_empty_files_then_empty_file_removed(self):
         self.remove_empty_file.remove_empty_files([self.file_info1])
         self.file_info_repository.remove_one.assert_called_with(self.file_info1.full_path)
+
+    def test_given_several_folders_when_listing_empty_files_then_every_one_of_them_is_scanned(self):
+        self.settings_repository.fetch_one.return_value = ["/downloads", "/desktop"]
+        self.file_info_repository.fetch_all_from_folder.side_effect = [[self.file_info1], []]
+
+        empty_files = self.remove_empty_file.list_empty_files()
+
+        self.assertEqual(
+            [call[0][0] for call in self.file_info_repository.fetch_all_from_folder.call_args_list],
+            ["/downloads", "/desktop"],
+        )
+        self.assertEqual(empty_files, [self.file_info1])
+
+    def test_given_several_folders_when_listing_empty_files_then_empty_files_are_not_skipped_on_the_way_in(self):
+        """fetch_all_from_folder drops empty files by default, which is precisely what
+        this screen is looking for."""
+        self.settings_repository.fetch_one.return_value = ["/downloads"]
+        self.file_info_repository.fetch_all_from_folder.side_effect = [[]]
+
+        self.remove_empty_file.list_empty_files()
+
+        self.assertFalse(self.file_info_repository.fetch_all_from_folder.call_args[1]["skip_empty_files"])
 
     def _create_file(self, file_path, file_contents):
         with open(file_path, "w") as file:

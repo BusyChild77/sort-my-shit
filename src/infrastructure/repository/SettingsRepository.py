@@ -58,8 +58,9 @@ class SettingsRepository(SettingsRepositoryInterface):
             if legacy_name in migrated:
                 migrated[current_name] = migrated.pop(legacy_name)
 
-        if isinstance(migrated.get("source_folders"), str):
-            migrated["source_folders"] = [migrated["source_folders"]]
+        for name in self.app_settings.folder_list_user_settings:
+            if isinstance(migrated.get(name), str):
+                migrated[name] = [migrated[name]]
 
         legacy_theme = {
             color_name: user_settings[legacy_name]
