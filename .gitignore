@@ -12,4 +12,5 @@ __pycache__/
 # Logs
 log/*
 
-./settings.json
+# Local user settings, recreated with defaults on first run
+/settings.json
