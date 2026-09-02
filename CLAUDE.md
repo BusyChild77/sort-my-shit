@@ -24,10 +24,10 @@ nothing else.
 
 ```
 src/domain/          pure business logic, no tkinter, no os/shutil, no I/O
-  entity/            plain data holders (FileInfo, DuplicateMatch, SortOperation, Theme, Settings)
+  entity/            plain data holders (FileInfo, DuplicateMatch, SortOperation, Theme, Settings, Version, Release)
   event/             EventManagerInterface
   repository/        interfaces the outer layers implement
-  service/           the actual behaviour (compare/, list/, remove/, sort/)
+  service/           the actual behaviour (compare/, list/, remove/, sort/, update/)
 src/infrastructure/  the outside world: disk access, JSON settings, log file
   repository/        implementations of the domain repository interfaces
   logger/            LogFileLogger
@@ -36,7 +36,7 @@ src/application/     everything tkinter
   assets/            the icon, in the three formats the platforms want
   component/         reusable widgets, all prefixed SMS
   view/              one screen each, subclasses of SMSView
-  service/           EventManager, ThemeProvider, IconProvider, Typography, SMSRenderer
+  service/           EventManager, ThemeProvider, IconProvider, Typography, SMSRenderer, UpdatePrompt
 src/manager/         ViewManager
 tests/               mirrors src/, see tests/CLAUDE.md
 ```
@@ -85,6 +85,25 @@ every packaged build while still working from the sources.
 Pushing to `main` bumps the patch version, builds the AppImage, the Windows executable and
 the macOS disk image, publishes the GitHub release and mirrors it to SourceForge.
 
+## Updating
+
+The app knows its own version through `Version.CURRENT`, which stays at `0.0.0` in the
+sources and is stamped by the release workflow before PyInstaller runs. **That stamp is
+what makes the updater work at all**: an unstamped build is behind every release, so
+`CheckForUpdate` refuses to look rather than offering an update forever. A run from the
+sources is refused for the same reason — there is no file to replace.
+
+`CheckForUpdate.look()` returns one of four outcomes rather than a release or nothing:
+`UNREACHABLE` must never be shown as `UP_TO_DATE`, or a machine with no network would be
+told it is current. `ApplyUpdate` then downloads the asset whose name matches this
+platform and hands it to `InstallationRepository`, which swaps the AppImage or the .exe
+in place. **macOS is deliberately never overwritten**: the bundle is unsigned, so a copy
+replaced behind Gatekeeper's back is quarantined and refuses to open, and the disk image
+is only revealed to the user instead.
+
+The network call and the download run on a worker thread — `UpdatePrompt` marshals every
+widget touch back through `widget.after()`, because Tk is single threaded.
+
 ## Settings
 
 `settings.json` sits next to the executable and is read through `SettingsRepository`.
@@ -121,7 +140,9 @@ with the tests that prove it, in the same commit:
   empty folder removal — including the cases where nothing should be touched;
 - duplicate detection, binary and filename comparison alike;
 - settings persistence and the migration of settings written by older versions,
-  including where they are written from for each packaged form of the app.
+  including where they are written from for each packaged form of the app;
+- the updater: which asset each platform installs, that macOS is never overwritten, and
+  that an unreachable GitHub is never reported as up to date.
 
 Domain services are tested against mocked repository *interfaces* and never touch the
 disk. Repository implementations get their own tests using a temporary folder under

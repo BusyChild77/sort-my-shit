@@ -30,7 +30,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Bump the patch of the latest release tag
+      - name: Pick the version this push releases
         id: next
         run: |
           # Read from the commit rather than from the event, so a manual run works
@@ -49,10 +49,24 @@ jobs:
 
           latest=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
 
-          if [ -z "$latest" ]; then
+          # A commit may name the version it releases, for anything a patch bump does not
+          # describe: "feat(thing): what it does [release 1.1.0]". Everything else is a
+          # patch on the latest tag, which is the common case and needs no ceremony.
+          named=$(printf '%s' "$subject" | sed -n 's/.*\[release \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\].*/\1/p')
+
+          if [ -n "$named" ]; then
+            version="$named"
+          elif [ -z "$latest" ]; then
             version="1.0.0"
           else
             version=$(echo "${latest#v}" | awk -F. '{ print $1 "." $2 "." $3 + 1 }')
+          fi
+
+          # A named version that already exists would push assets into a published
+          # release, so it stops here rather than half rewriting one.
+          if git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+            echo "::error::v$version is already tagged."
+            exit 1
           fi
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -94,6 +108,20 @@ jobs:
         # PyInstaller only warns when it cannot find tkinter, and ships a binary that
         # dies on startup, so the build stops here instead.
         run: python -c "import tkinter; print('Tk', tkinter.TkVersion)"
+
+      - name: Stamp the version into the build
+        shell: bash
+        # The app compares this against the latest release to know whether it is behind.
+        # Left at its development value the check disables itself, so the assertion is
+        # what stops a build shipping with no idea what version it is.
+        run: |
+          set -e
+          sed -i.bak 's/^    CURRENT = ".*"/    CURRENT = "${{ needs.version.outputs.version }}"/' src/domain/entity/Version.py
+          rm -f src/domain/entity/Version.py.bak
+          python -c "from src.domain.entity.Version import Version; \
+            assert Version.current().name == '${{ needs.version.outputs.version }}', Version.current().name; \
+            assert not Version.current().is_development(); \
+            print('stamped as', Version.current())"
 
       - name: Build the executable
         run: pyinstaller SortMyShit.spec --distpath=.packaged/dist --workpath=.packaged/build --clean --noconfirm
