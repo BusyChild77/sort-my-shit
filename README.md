@@ -114,7 +114,8 @@ Comes pre-configured for testing using unittest with VSCode
 
 Pushing to `main` builds the three executables, tags the next patch version, creates the
 GitHub release and mirrors the files to SourceForge. Add `[skip release]` to a commit
-message to land a change without releasing it.
+*subject* to land a change without releasing it — only the subject line is looked at, so
+a commit body can mention it freely.
 
 The SourceForge mirror is skipped, with a warning rather than a failure, until these
 repository secrets are set:

@@ -1,7 +1,9 @@
 # Every push to main ships a release: one executable per operating system, published
 # on GitHub and mirrored to SourceForge, which is where the README points users.
 #
-# Put "[skip release]" in the commit message to land a change without releasing it.
+# Start the commit subject with, or include in it, "[skip release]" to land a change
+# without releasing it. Only the subject line counts, so a commit body is free to
+# mention the escape hatch without tripping it.
 name: Release
 
 on:
@@ -18,9 +20,9 @@ env:
 jobs:
   version:
     name: Pick the next version
-    if: ${{ !contains(github.event.head_commit.message, '[skip release]') }}
     runs-on: ubuntu-latest
     outputs:
+      release: ${{ steps.next.outputs.release }}
       version: ${{ steps.next.outputs.version }}
       tag: ${{ steps.next.outputs.tag }}
     steps:
@@ -31,6 +33,20 @@ jobs:
       - name: Bump the patch of the latest release tag
         id: next
         run: |
+          # Read from the commit rather than from the event, so a manual run works
+          # too, and only the subject line is looked at.
+          subject=$(git log -1 --format=%s)
+
+          case "$subject" in
+            *"[skip release]"*)
+              echo "release=false" >> "$GITHUB_OUTPUT"
+              echo "No release: the commit asks to skip it." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+              ;;
+          esac
+
+          echo "release=true" >> "$GITHUB_OUTPUT"
+
           latest=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
 
           if [ -z "$latest" ]; then
@@ -46,6 +62,7 @@ jobs:
   build:
     name: Build for ${{ matrix.name }}
     needs: version
+    if: needs.version.outputs.release == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -135,6 +152,7 @@ jobs:
   release:
     name: Publish the GitHub release
     needs: [ version, build ]
+    if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -156,6 +174,7 @@ jobs:
   sourceforge:
     name: Mirror to SourceForge
     needs: [ version, build, release ]
+    if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
