@@ -11,6 +11,10 @@ class SettingsRepositoryInterface(ABC):
         pass
 
     @abstractmethod
+    def fetch_type_mapping(self) -> dict:
+        pass
+
+    @abstractmethod
     def save_all(self, settings):
         pass
 

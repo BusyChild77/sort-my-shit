@@ -1,6 +1,5 @@
-from os import rmdir as os_rmdir, walk as os_walk
-
 from src.domain.event.EventManagerInterface import EventManagerInterface
+from src.domain.repository.FileSystemRepositoryInterface import FileSystemRepositoryInterface
 from src.domain.repository.SettingsRepositoryInterface import SettingsRepositoryInterface
 
 
@@ -8,22 +7,23 @@ class RemoveEmptyFolder:
     def __init__(
         self,
         event_manager: EventManagerInterface,
-        settings_repository: SettingsRepositoryInterface
+        settings_repository: SettingsRepositoryInterface,
+        file_system_repository: FileSystemRepositoryInterface,
     ):
         self.event_manager = event_manager
         self.settings_repository = settings_repository
+        self.file_system_repository = file_system_repository
 
     def list_empty_folders(self) -> list[str]:
-        folder_to_process = self.settings_repository.fetch_one("folder_to_process")
         empty_folders = []
         self.event_manager.trigger("status", "Begin empty folders listing")
 
-        for root, dirs, files in os_walk(folder_to_process):
-            if not dirs and not files and root != folder_to_process:
-                empty_folders.append(root)
+        for source_folder in self.settings_repository.fetch_one("source_folders"):
+            for empty_folder in self.file_system_repository.list_empty_folders(source_folder):
+                empty_folders.append(empty_folder)
                 self.event_manager.trigger(
                     "foundEmptyFolder",
-                    f"Found empty directory {root}"
+                    f"Found empty directory {empty_folder}"
                 )
 
         self.event_manager.trigger(
@@ -36,7 +36,7 @@ class RemoveEmptyFolder:
 
     def remove_empty_folders(self, empty_folders: list[str]) -> None:
         for empty_folder in empty_folders:
-            os_rmdir(empty_folder)
+            self.file_system_repository.remove_folder(empty_folder)
 
             self.event_manager.trigger(
                 "deletedEmptyFolder",
