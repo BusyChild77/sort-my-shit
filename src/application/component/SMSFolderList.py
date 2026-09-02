@@ -83,19 +83,25 @@ class SMSFolderList(Frame):
             self.__create_row(folder).grid(row=row, column=0, sticky="ew", pady=3)
 
     def __create_row(self, folder: str) -> Frame:
-        row = Frame(
-            self.rows,
+        """The path in its own box, the button beside it rather than inside — the same
+        shape as the browse button next to a folder field."""
+        row = Frame(self.rows, background=self.theme.background)
+        row.columnconfigure(0, weight=1)
+
+        path = Frame(
+            row,
             background=self.theme.elevated,
             highlightbackground=self.theme.border,
             highlightthickness=1,
             height=self.ROW_HEIGHT,
             padx=12,
         )
-        row.grid_propagate(0)
-        row.columnconfigure(0, weight=1)
+        path.grid_propagate(0)
+        path.columnconfigure(0, weight=1)
+        path.grid(row=0, column=0, sticky="ew")
 
         SMSLabel(
-            container=row,
+            container=path,
             text=folder,
             bg=self.theme.elevated,
             fg=self.theme.text,
@@ -107,8 +113,8 @@ class SMSFolderList(Frame):
             theme=self.theme,
             text="Remove",
             variant="ghost",
-            width=6,
+            width=8,
             command=lambda folder=folder: self.__remove_folder(folder),
-        ).grid(row=0, column=1, sticky="e", padx=(14, 0))
+        ).grid(row=0, column=1, sticky="e", padx=(10, 0))
 
         return row
