@@ -1,8 +1,9 @@
-from os import path as os_path, getcwd as os_getcwd
+from os import path as os_path
 from sys import argv as sys_argv
-from tkinter import Tk, PhotoImage
+from tkinter import Tk
 
 from src.application.service.EventManager import EventManager
+from src.application.service.IconProvider import IconProvider
 from src.application.service.SMSRenderer import SMSRenderer
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.view.AppearanceView import AppearanceView
@@ -42,6 +43,7 @@ class SortMyShit:
         TmpStorageRepository,
         LogFileLogger,
         ThemeProvider,
+        IconProvider,
         CompareFileName,
         CompareBinary,
         ResolveCategory,
@@ -83,7 +85,6 @@ class SortMyShit:
         service_manager.get_service("LogFileLogger").activate_logging()
 
         root = Tk()
-        root.iconphoto(False, PhotoImage(file=os_getcwd() + '/src/application/assets/icon.png'))
 
         view_manager.set_views(SortMyShit.views)
 

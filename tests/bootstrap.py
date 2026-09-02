@@ -1,5 +1,6 @@
 from unittest import TestLoader, TestSuite, TextTestRunner
 
+from tests.application.service.IconProviderTest import IconProviderTest
 from tests.domain.entity.ThemeTest import ThemeTest
 from tests.domain.service.CompareBinaryTest import BinaryComparatorTest
 from tests.domain.service.CompareFileNameTest import FileNameComparatorTest
@@ -14,6 +15,7 @@ from tests.infrastructure.repository.FileSystemRepositoryTest import FileSystemR
 from tests.infrastructure.repository.SettingsRepositoryTest import SettingsRepositoryTest
 
 test_cases = [
+    IconProviderTest,
     ThemeTest,
     BinaryComparatorTest,
     FileNameComparatorTest,

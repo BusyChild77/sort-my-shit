@@ -32,9 +32,10 @@ src/infrastructure/  the outside world: disk access, JSON settings, log file
   repository/        implementations of the domain repository interfaces
   logger/            LogFileLogger
 src/application/     everything tkinter
+  assets/            the icon, in the three formats the platforms want
   component/         reusable widgets, all prefixed SMS
   view/              one screen each, subclasses of SMSView
-  service/           EventManager, ThemeProvider, Typography, SMSRenderer
+  service/           EventManager, ThemeProvider, IconProvider, Typography, SMSRenderer
 src/manager/         ViewManager
 tests/               mirrors src/, see tests/CLAUDE.md
 ```
@@ -64,6 +65,17 @@ Layer rules, in order of importance:
   never by printing.
 - flake8 with `--max-line-length=160`; keep functions under a complexity of 10.
 - Commits follow conventional commits: `type(scope): description`.
+
+## Icon
+
+The icon lives in `src/application/assets/` in three formats, all the same artwork: the
+poop on a tile in the `Midnight` palette. `icon.png` is the one the running app shows;
+`icon.ico` and `icon.icns` are build inputs, read when the Windows executable and the
+macOS bundle are stamped.
+
+`IconProvider` is the only place that knows where that file is. It never uses the current
+working directory — the app is launched from anywhere — and it looks inside the folder
+PyInstaller unpacks the bundle into when the app is compiled.
 
 ## Settings
 

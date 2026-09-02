@@ -82,6 +82,14 @@ Only the five colors in `Theme.EDITABLE_COLORS` are stored. Every other shade â€
 `muted`, `accent_hover`, `on_accent`, `surface_hover` â€” is derived, so a user palette stays
 coherent whatever they pick. Need a new shade? Derive it in `Theme`, do not add a setting.
 
+## Icon (`service/IconProvider.py`)
+
+Resolves the window icon and caches the `PhotoImage`, because Tk keeps no reference of
+its own and drops an icon that gets garbage collected. `SMSRenderer` applies it with
+`iconphoto(True, ...)` so the dialogs the views open carry it as well. The lookup goes
+through the sources and through the PyInstaller bundle, never through the current working
+directory.
+
 ## Rendering (`service/SMSRenderer.py`)
 
 Owns the window chrome: side bar, menu, keyboard shortcuts, and which view is visible.

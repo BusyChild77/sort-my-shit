@@ -2,6 +2,7 @@ from tkinter import Tk, Frame, Menu, font as tk_font
 
 from src.application.component.SMSSidebar import SMSSidebar
 from src.application.service.EventManager import EventManager
+from src.application.service.IconProvider import IconProvider
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.Typography import Typography
 from src.application.view.SMSView import SMSView
@@ -31,9 +32,11 @@ class SMSRenderer:
         self,
         theme_provider: ThemeProvider,
         event_manager: EventManager,
+        icon_provider: IconProvider,
     ):
         self.theme_provider = theme_provider
         self.event_manager = event_manager
+        self.icon_provider = icon_provider
         self.current_view_name = "sort_files"
 
     def render(self, root: Tk, view_manager: ViewManager):
@@ -45,6 +48,8 @@ class SMSRenderer:
         tk_font.nametofont("TkMenuFont").configure(family=Typography.FAMILY, size=11)
 
         root.title("SortMyShit")
+        # True so the dialogs the views open carry the icon as well.
+        root.iconphoto(True, self.icon_provider.get())
         root.geometry(self.WINDOW_SIZE)
         root.minsize(self.WINDOW_MINIMUM_WIDTH, self.WINDOW_MINIMUM_HEIGHT)
         root.rowconfigure(0, weight=1)
