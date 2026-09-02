@@ -66,7 +66,7 @@ Layer rules, in order of importance:
 - flake8 with `--max-line-length=160`; keep functions under a complexity of 10.
 - Commits follow conventional commits: `type(scope): description`.
 
-## Icon
+## Icon and packaging
 
 The icon lives in `src/application/assets/` in three formats, all the same artwork: the
 poop on a tile in the `Midnight` palette. `icon.png` is the one the running app shows;
@@ -75,7 +75,13 @@ macOS bundle are stamped.
 
 `IconProvider` is the only place that knows where that file is. It never uses the current
 working directory — the app is launched from anywhere — and it looks inside the folder
-PyInstaller unpacks the bundle into when the app is compiled.
+PyInstaller unpacks the bundle into when the app is compiled. **A new asset read at
+runtime has to be added to `datas` in `SortMyShit.spec`**, or it will be missing from
+every packaged build while still working from the sources.
+
+`SortMyShit.spec` is the single build recipe, run by `compile.sh`, so what is built
+locally and what is shipped are the same thing. It picks the icon format the platform
+wants and packs the window icon into the executable.
 
 ## Settings
 

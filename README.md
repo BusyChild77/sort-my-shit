@@ -53,11 +53,15 @@ Run the project:
 python3 Main.py
 ```
 
-Compile into a single executable (tested on Linux):
+Compile into a single executable for the platform you are on:
 
 ```bash
 sh compile.sh
 ```
+
+The recipe lives in `SortMyShit.spec`, so what you build locally and what is shipped are
+the same thing. It picks the right icon per platform and packs the window icon into the
+executable.
 
 ## Configuration
 

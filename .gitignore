@@ -1,7 +1,6 @@
 # Compilation related files
-.packaged/build/
-.packaged/dist/
-.packaged/spec/
+.packaged/
+SortMyShit.AppDir/
 
 # Python bytecode
 __pycache__/
