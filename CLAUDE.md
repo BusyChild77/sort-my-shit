@@ -31,6 +31,7 @@ src/domain/          pure business logic, no tkinter, no os/shutil, no I/O
 src/infrastructure/  the outside world: disk access, JSON settings, log file
   repository/        implementations of the domain repository interfaces
   logger/            LogFileLogger
+  RunDirectory.py    where the app reads and writes its own files
 src/application/     everything tkinter
   assets/            the icon, in the three formats the platforms want
   component/         reusable widgets, all prefixed SMS
@@ -86,6 +87,12 @@ wants and packs the window icon into the executable.
 ## Settings
 
 `settings.json` sits next to the executable and is read through `SettingsRepository`.
+**Where "next to the executable" is** is `RunDirectory`'s decision, not
+`SettingsRepository`'s: an AppImage runs from a read only mount and a macOS .app hides
+its binary under `Contents/MacOS`, so the folder holding what the user actually launched
+is resolved there, and falls back to the platform configuration folder when it cannot be
+written to. Anything that packages the app in a new way is covered by
+`RunDirectoryTest`.
 Defaults live in `src/domain/entity/Settings.py`; anything missing from the file falls
 back to them, so adding a setting is a one line change there.
 
@@ -112,7 +119,8 @@ with the tests that prove it, in the same commit:
 - every operation that **deletes or moves user data** — duplicate removal, empty file and
   empty folder removal — including the cases where nothing should be touched;
 - duplicate detection, binary and filename comparison alike;
-- settings persistence and the migration of settings written by older versions.
+- settings persistence and the migration of settings written by older versions,
+  including where they are written from for each packaged form of the app.
 
 Domain services are tested against mocked repository *interfaces* and never touch the
 disk. Repository implementations get their own tests using a temporary folder under

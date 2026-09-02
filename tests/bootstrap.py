@@ -12,6 +12,7 @@ from tests.domain.service.RemoveEmptyFolderTest import RemoveEmptyFolderTest
 from tests.domain.service.ResolveCategoryTest import ResolveCategoryTest
 from tests.domain.service.SortFileTest import SortFileTest
 from tests.infrastructure.repository.FileSystemRepositoryTest import FileSystemRepositoryTest
+from tests.infrastructure.RunDirectoryTest import RunDirectoryTest
 from tests.infrastructure.repository.SettingsRepositoryTest import SettingsRepositoryTest
 
 test_cases = [
@@ -27,6 +28,7 @@ test_cases = [
     ResolveCategoryTest,
     SortFileTest,
     FileSystemRepositoryTest,
+    RunDirectoryTest,
     SettingsRepositoryTest,
 ]
 

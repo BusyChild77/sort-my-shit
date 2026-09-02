@@ -65,7 +65,11 @@ executable.
 
 ## Configuration
 
-Everything is saved to `settings.json` next to the executable, as soon as you change it.
+Everything is saved to `settings.json` next to the executable, as soon as you change it,
+so the app stays portable: move the executable and its settings go with it. When that
+folder cannot be written to — a system wide install, or the read only mount an AppImage
+runs from — the settings go to the usual place for the platform instead
+(`~/.config/SortMyShit`, `~/Library/Application Support/SortMyShit`, `%APPDATA%\SortMyShit`).
 Settings written by an older version are migrated automatically.
 
 **The folders each action works on are picked on that action's own screen**, so you can

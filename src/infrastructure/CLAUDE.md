@@ -24,3 +24,12 @@ Where the outside world is allowed in: the filesystem, `settings.json`, the log 
   older versions; see the Settings section of the root `CLAUDE.md` before renaming one.
 - `TmpStorageRepository` — in memory hand off between a view's "analyse" and "run" steps.
   Not persistence, do not make it one.
+
+## RunDirectory
+
+Not a repository, and the exception to the rule above: it implements no interface because
+the domain has no say in it. It answers one question — which folder the app reads and
+writes its own files in — and `Main.py` hands the answer to `SettingsRepository.runDir`.
+The packaged forms are what make it non trivial: an AppImage mount is read only, a macOS
+.app buries its binary, and a system wide install is not writable. Package the app a new
+way, and this is the class to extend, with a case in `RunDirectoryTest`.

@@ -1,5 +1,3 @@
-from os import path as os_path
-from sys import argv as sys_argv
 from tkinter import Tk
 
 from src.application.service.EventManager import EventManager
@@ -29,6 +27,7 @@ from src.infrastructure.repository.FileInfoRepository import FileInfoRepository
 from src.infrastructure.repository.FileSystemRepository import FileSystemRepository
 from src.infrastructure.repository.SettingsRepository import SettingsRepository
 from src.infrastructure.repository.TmpStorageRepository import TmpStorageRepository
+from src.infrastructure.RunDirectory import RunDirectory
 
 from pysman.service_manager import ServiceManager
 from src.manager.ViewManager import ViewManager
@@ -81,7 +80,7 @@ class SortMyShit:
 
         service_manager.register_aliases(SortMyShit.aliases)
         service_manager.autoload_services(SortMyShit.services)
-        service_manager.get_service("SettingsRepository").runDir = os_path.dirname(os_path.abspath(sys_argv[0]))
+        service_manager.get_service("SettingsRepository").runDir = RunDirectory.resolve()
         service_manager.get_service("LogFileLogger").activate_logging()
 
         root = Tk()
