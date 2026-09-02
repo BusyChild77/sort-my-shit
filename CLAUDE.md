@@ -70,9 +70,11 @@ Layer rules, in order of importance:
 ## Icon and packaging
 
 The icon lives in `src/application/assets/` in three formats, all the same artwork: the
-poop on a tile in the `Midnight` palette. `icon.png` is the one the running app shows, and
-the only one shipped inside the executable; `icon.ico` and `icon.icns` are build inputs,
-read by PyInstaller when it stamps the Windows executable and the macOS bundle.
+poop as one flat gold shape — no face, no shading, no outline, no background — so it
+reads at 16 pixels and sits on any desktop without carrying a tile of its own.
+`icon.png` is the one the running app shows, and the only one shipped inside the
+executable; `icon.ico` and `icon.icns` are build inputs, read by PyInstaller when it
+stamps the Windows executable and the macOS bundle.
 
 `IconProvider` is the only place that knows where that file is. It never uses the current
 working directory — the app is launched from anywhere — and it looks inside the folder
