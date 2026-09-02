@@ -4,6 +4,7 @@ from src.application.service.EventManager import EventManager
 from src.application.service.IconProvider import IconProvider
 from src.application.service.SMSRenderer import SMSRenderer
 from src.application.service.ThemeProvider import ThemeProvider
+from src.application.service.UpdatePrompt import UpdatePrompt
 from src.application.view.AppearanceView import AppearanceView
 from src.application.view.ConsoleView import ConsoleView
 from src.application.view.RemoveDuplicatesView import RemoveDuplicatesView
@@ -21,10 +22,14 @@ from src.domain.service.remove.RemoveEmptyFolder import RemoveEmptyFolder
 from src.domain.service.sort.PlanSort import PlanSort
 from src.domain.service.sort.ResolveCategory import ResolveCategory
 from src.domain.service.sort.SortFile import SortFile
+from src.domain.service.update.ApplyUpdate import ApplyUpdate
+from src.domain.service.update.CheckForUpdate import CheckForUpdate
 
 from src.infrastructure.logger.LogFileLogger import LogFileLogger
 from src.infrastructure.repository.FileInfoRepository import FileInfoRepository
 from src.infrastructure.repository.FileSystemRepository import FileSystemRepository
+from src.infrastructure.repository.GitHubReleaseRepository import GitHubReleaseRepository
+from src.infrastructure.repository.InstallationRepository import InstallationRepository
 from src.infrastructure.repository.SettingsRepository import SettingsRepository
 from src.infrastructure.repository.TmpStorageRepository import TmpStorageRepository
 from src.infrastructure.RunDirectory import RunDirectory
@@ -40,6 +45,8 @@ class SortMyShit:
         FileInfoRepository,
         FileSystemRepository,
         TmpStorageRepository,
+        GitHubReleaseRepository,
+        InstallationRepository,
         LogFileLogger,
         ThemeProvider,
         IconProvider,
@@ -52,6 +59,9 @@ class SortMyShit:
         RemoveEmptyFolder,
         RemoveEmptyFile,
         RemoveDuplicate,
+        CheckForUpdate,
+        ApplyUpdate,
+        UpdatePrompt,
         SMSRenderer,
     ]
 
@@ -61,6 +71,8 @@ class SortMyShit:
         "FileSystemRepositoryInterface": FileSystemRepository,
         "TmpStorageRepositoryInterface": TmpStorageRepository,
         "EventManagerInterface": EventManager,
+        "ReleaseRepositoryInterface": GitHubReleaseRepository,
+        "InstallationRepositoryInterface": InstallationRepository,
     }
 
     views = {

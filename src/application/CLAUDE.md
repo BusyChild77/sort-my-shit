@@ -97,6 +97,19 @@ its own and drops an icon that gets garbage collected. `SMSRenderer` applies it 
 through the sources and through the PyInstaller bundle, never through the current working
 directory — see the packaging section of the root `CLAUDE.md`.
 
+## Updating (`service/UpdatePrompt.py`)
+
+The one place that talks to the user about versions, shared by the startup check
+(`SMSRenderer` calls `check_on_startup`) and the button on the Settings screen.
+
+**Tk is single threaded**, so the lookup and the download run in a worker and every
+widget touch is handed back through `widget.after()`. Doing the network call inline
+freezes the window for as long as GitHub takes to answer.
+
+Nothing is replaced without a `messagebox` answer first. The Settings screen passes an
+`announce` callback to get the outcome as a line of text; the startup check passes none,
+so it stays silent unless there is something to install.
+
 ## Rendering (`service/SMSRenderer.py`)
 
 Owns the window chrome: side bar, menu, keyboard shortcuts, and which view is visible.

@@ -32,6 +32,13 @@ class SettingsRepositoryTest(TestCase):
 
         self.assertFalse(self.settings_repository.fetch_one("preserve_folder_tree"))
 
+    def test_given_settings_from_before_the_updater_when_fetching_settings_then_the_startup_check_is_on(self):
+        """Upgrading from a version with no updater must switch the check on, or the
+        user who upgraded once would never be told about a release again."""
+        self.__given_settings({"destination_folder": "/destination"})
+
+        self.assertTrue(self.settings_repository.fetch_one("check_for_updates_on_startup"))
+
     def test_given_settings_from_a_version_without_multiple_sources_when_fetching_settings_then_the_folder_is_migrated(self):
         self.__given_settings({"folder_to_process": "/downloads"})
 

@@ -14,7 +14,11 @@ with the tests that prove it, in the same commit. The critical features are:
   empty folder removal — including the negative cases: what must *not* be touched;
 - **duplicate detection** — binary and filename comparison, and the large file rules;
 - **settings** — persistence, defaults for a missing key, and the migration of settings
-  written by an older version. A user must never lose their configuration on upgrade.
+  written by an older version. A user must never lose their configuration on upgrade;
+- **updating** — it replaces the running application, so: which asset each platform
+  installs, that macOS is handed over rather than overwritten, that an unreachable GitHub
+  never reads as up to date, and that a run from the sources or an unstamped build never
+  updates at all.
 
 A bug fix in any of the above starts with the failing test.
 

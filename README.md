@@ -28,6 +28,8 @@ Every push to `main` publishes a build, on the
 - Remove empty files and empty folders, including folders holding only empty folders.
 - **Customisable interface**: four built-in themes, and a color picker for each interface
   color, applied live.
+- **Updates itself**: checks GitHub on startup and from a button in Settings, and installs
+  the new version after asking.
 - Resizable window: the layout re-flows to the size you give it.
 
 ## Installation
@@ -100,7 +102,21 @@ The **Settings** screen holds the options that change how an action behaves:
 | `binary_search` | Compare file contents rather than filenames |
 | `binary_search_large_files` | Include large files in the binary comparison |
 | `log_output_in_file` | Write the console output to `log/log.txt` |
+| `check_for_updates_on_startup` | Look for a new release on launch and offer to install it |
 | `theme` | The five interface colors, edited from the **Appearance** screen |
+
+## Updates
+
+**Settings → Updates** holds a *Check for updates* button, and the app also looks on its
+own each launch unless you turn `check_for_updates_on_startup` off. Nothing is ever
+downloaded or replaced without you saying yes.
+
+On Linux and Windows the new version is installed over the running one and the app offers
+to restart into it. On macOS the disk image is downloaded and shown in Finder for you to
+drag across instead: the bundle is not signed or notarised, and a copy replaced behind
+Gatekeeper's back is quarantined and refuses to open.
+
+Running from the sources there is nothing to replace, so the check reports that and stops.
 
 ## VSCode support
 

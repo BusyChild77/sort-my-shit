@@ -39,6 +39,7 @@ class Settings:
         "binary_search": True,
         "binary_search_large_files": False,
         "log_output_in_file": True,
+        "check_for_updates_on_startup": True,
         "ask_before_removing_duplicates": True,
         "ask_before_removing_empty_folders": True,
         "binary_comparison_large_files_threshold": 5000000,

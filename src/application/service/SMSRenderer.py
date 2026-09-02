@@ -4,6 +4,7 @@ from src.application.component.SMSSidebar import SMSSidebar
 from src.application.service.EventManager import EventManager
 from src.application.service.IconProvider import IconProvider
 from src.application.service.ThemeProvider import ThemeProvider
+from src.application.service.UpdatePrompt import UpdatePrompt
 from src.application.service.Typography import Typography
 from src.application.view.SMSView import SMSView
 from src.manager.ViewManager import ViewManager
@@ -33,10 +34,12 @@ class SMSRenderer:
         theme_provider: ThemeProvider,
         event_manager: EventManager,
         icon_provider: IconProvider,
+        update_prompt: UpdatePrompt,
     ):
         self.theme_provider = theme_provider
         self.event_manager = event_manager
         self.icon_provider = icon_provider
+        self.update_prompt = update_prompt
         self.current_view_name = "sort_files"
 
     def render(self, root: Tk, view_manager: ViewManager):
@@ -59,6 +62,10 @@ class SMSRenderer:
         self.event_manager.subscribe(ThemeProvider.THEME_CHANGED, self.reload)
 
         self.__render_chrome()
+
+        # After the chrome, so the prompt has a window to sit over rather than
+        # appearing on its own while the interface is still being built.
+        self.update_prompt.check_on_startup(root)
 
     def reload(self):
         """Rebuild every widget against the current theme, once the click that
