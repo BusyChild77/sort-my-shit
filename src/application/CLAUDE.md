@@ -88,7 +88,7 @@ Resolves the window icon and caches the `PhotoImage`, because Tk keeps no refere
 its own and drops an icon that gets garbage collected. `SMSRenderer` applies it with
 `iconphoto(True, ...)` so the dialogs the views open carry it as well. The lookup goes
 through the sources and through the PyInstaller bundle, never through the current working
-directory.
+directory — see the packaging section of the root `CLAUDE.md`.
 
 ## Rendering (`service/SMSRenderer.py`)
 

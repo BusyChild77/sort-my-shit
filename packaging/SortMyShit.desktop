@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=SortMyShit
+GenericName=File sorter
+Comment=Sort files by type, and clear out duplicates, empty files and empty folders
+Exec=SortMyShit
+Icon=SortMyShit
+Terminal=false
+Categories=Utility;FileTools;
+Keywords=sort;files;duplicates;cleanup;

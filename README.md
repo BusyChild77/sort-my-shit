@@ -4,7 +4,15 @@ SortMyShit is an open-source Python project designed to help you organize and ma
 
 ## Download
 
-Latest version available for Linux [on SourceForge](https://sourceforge.net/projects/sortmyshit/)
+Every push to `main` publishes a build, on the
+[GitHub releases page](https://github.com/BusyChild77/sort-my-shit/releases) and
+[on SourceForge](https://sourceforge.net/projects/sortmyshit/):
+
+| Platform | File | Notes |
+| --- | --- | --- |
+| Linux | `SortMyShit-<version>-x86_64.AppImage` | `chmod +x` it and run it, nothing to install |
+| Windows | `SortMyShit-<version>-windows-x86_64.exe` | Single executable |
+| macOS | `SortMyShit-<version>-macos-arm64.dmg` | Apple Silicon, unsigned: open it from the right click menu the first time |
 
 ## Features
 
@@ -59,9 +67,9 @@ Compile into a single executable for the platform you are on:
 sh compile.sh
 ```
 
-The recipe lives in `SortMyShit.spec`, so what you build locally and what is shipped are
-the same thing. It picks the right icon per platform and packs the window icon into the
-executable.
+The recipe lives in `SortMyShit.spec`, which is also what the release workflow runs, so
+a local build and a released one are the same thing. It picks the right icon per platform
+and packs the window icon into the executable.
 
 ## Configuration
 
@@ -101,6 +109,21 @@ Comes pre-configured to run in debugging mode with VSCode
 Comes pre-configured with linting on vscode using flake8 
 
 Comes pre-configured for testing using unittest with VSCode
+
+## Releasing
+
+Pushing to `main` builds the three executables, tags the next patch version, creates the
+GitHub release and mirrors the files to SourceForge. Add `[skip release]` to a commit
+message to land a change without releasing it.
+
+The SourceForge mirror is skipped, with a warning rather than a failure, until these
+repository secrets are set:
+
+| Secret | What it is |
+| --- | --- |
+| `SOURCEFORGE_USER` | The SourceForge user with release rights on the project |
+| `SOURCEFORGE_SSH_KEY` | The private key whose public half is on that account |
+| `SOURCEFORGE_API_KEY` | Optional, used to point the download button of each platform at its own file |
 
 ## Licensing and Contrubition
 
