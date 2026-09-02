@@ -216,7 +216,10 @@ jobs:
             exit 0
           fi
 
-          # What the big green button offers, per visiting platform.
+          # SourceForge answers 400 until it has indexed a file, which happens a moment
+          # after rsync returns rather than as part of it. Hence the retries, and hence
+          # the warning rather than a failure at the end: the files are already
+          # mirrored, and this only decides what the big green button offers.
           set_default() {
             file="$1"
             shift
@@ -227,9 +230,24 @@ jobs:
               defaults="$defaults -d default=$platform"
             done
 
-            # shellcheck disable=SC2086
-            curl -sSf -H "Accept: application/json" -X PUT \
-              -d "api_key=$SOURCEFORGE_API_KEY" $defaults "$url" > /dev/null
+            attempt=1
+            while [ "$attempt" -le 5 ]; do
+              # shellcheck disable=SC2086
+              response=$(curl -s -w '\n%{http_code}' -H "Accept: application/json" -X PUT \
+                -d "api_key=$SOURCEFORGE_API_KEY" $defaults "$url")
+              status=$(printf '%s' "$response" | tail -n 1)
+
+              if [ "$status" = "200" ]; then
+                echo "$file is now the default for: $*"
+                return 0
+              fi
+
+              echo "attempt $attempt for $file: HTTP $status $(printf '%s' "$response" | sed '$d')"
+              attempt=$((attempt + 1))
+              [ "$attempt" -le 5 ] && sleep 20
+            done
+
+            echo "::warning::Could not set the default download for $file. It is mirrored either way; set it by hand from the SourceForge file manager."
           }
 
           set_default "SortMyShit-$VERSION-x86_64.AppImage" linux bsd solaris others
