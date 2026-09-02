@@ -106,6 +106,7 @@ jobs:
         run: |
           set -e
           appdir=SortMyShit.AppDir
+          mkdir -p artifacts
           mkdir -p "$appdir/usr/bin" "$appdir/usr/share/applications" "$appdir/usr/share/icons/hicolor/512x512/apps"
 
           cp .packaged/dist/SortMyShit "$appdir/usr/bin/SortMyShit"
