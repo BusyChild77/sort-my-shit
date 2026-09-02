@@ -10,7 +10,6 @@ from src.domain.service.list.ListDuplicate import ListDuplicate
 from src.domain.service.compare.CompareFileName import CompareFileName
 from src.domain.repository.FileInfoRepositoryInterface import FileInfoRepositoryInterface
 from src.domain.repository.SettingsRepositoryInterface import SettingsRepositoryInterface
-from src.domain.entity.DuplicateMatch import DuplicateMatch
 
 
 class ListDuplicateTest(TestCase):
@@ -19,12 +18,14 @@ class ListDuplicateTest(TestCase):
         self.file_info_repository_mock = Mock(FileInfoRepositoryInterface)
         self.settings_repository_mock = Mock(SettingsRepositoryInterface)
 
+        self.file_name_comparator_mock = Mock(CompareFileName)
+
         self.list_duplicate = ListDuplicate(
             Mock(EventManagerInterface),
             self.settings_repository_mock,
             self.file_info_repository_mock,
             self.binary_comparator_mock,
-            Mock(CompareFileName),
+            self.file_name_comparator_mock,
         )
 
         base_path = Path().resolve() / "tests/domain/service/DuplicateTest"
@@ -51,6 +52,16 @@ class ListDuplicateTest(TestCase):
     def test_given_two_files_with_same_content_when_comparing_files_then_a_duplicate_match_is_returned(self):
         self.settings_repository_mock.fetch_one.return_value = True
         self.binary_comparator_mock.compare.side_effect = False, True, True, False
+        self.file_info_repository_mock.fetch_all_from_folder.return_value = [self.file_info1, self.file_info2, self.file_info3]
+
+        duplicates = self.list_duplicate.list_duplicates()
+
+        self.assertEqual(duplicates[0].files, [self.file_info2, self.file_info3])
+        self.assertEqual(duplicates[0].duplicate_of, self.file_info1)
+
+    def test_given_two_files_with_same_name_when_comparing_names_then_a_duplicate_match_holding_a_file_list_is_returned(self):
+        self.settings_repository_mock.fetch_one.return_value = False
+        self.file_name_comparator_mock.compare.side_effect = False, True, True, False
         self.file_info_repository_mock.fetch_all_from_folder.return_value = [self.file_info1, self.file_info2, self.file_info3]
 
         duplicates = self.list_duplicate.list_duplicates()

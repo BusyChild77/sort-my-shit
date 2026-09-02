@@ -77,15 +77,24 @@ class ListDuplicate:
     def __list_files_by_identical_file_name(
         self,
         all_files: list[FileInfo],
-        file_looked_up: FileInfo,
+        duplicate_of: FileInfo,
     ) -> DuplicateMatch:
         file: FileInfo
+
+        files = []
+
         for file in all_files:
             if not os_path.isfile(file.full_path):
                 continue
 
-            if self.file_name_comparator.compare(file, file_looked_up) is True:
-                return DuplicateMatch(file_looked_up, file)
+            if self.file_name_comparator.compare(file, duplicate_of) is True:
+                files.append(file)
+
+        if len(files) == 0:
+            return None
+
+        self.__remove_found_duplicates_from_all_files_list(all_files, files, duplicate_of)
+        return DuplicateMatch(files, duplicate_of)
 
     def __remove_found_duplicates_from_all_files_list(
             self,
