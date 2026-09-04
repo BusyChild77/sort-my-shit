@@ -40,5 +40,12 @@ if platform == "darwin":
         name="SortMyShit.app",
         icon=EXECUTABLE_ICON,
         bundle_identifier="io.github.busychild77.sortmyshit",
-        info_plist={"NSHighResolutionCapable": True},
+        info_plist={
+            # What the Dock and the menu bar read. Left out they fall back to the
+            # name of the bundle, and the application is listed as "SortMyShit".
+            # DesktopIdentity.NAME is the same string, kept so by DesktopIdentityTest.
+            "CFBundleName": "Sort My Shit",
+            "CFBundleDisplayName": "Sort My Shit",
+            "NSHighResolutionCapable": True,
+        },
     )

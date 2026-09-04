@@ -1,5 +1,4 @@
-from tkinter import Tk
-
+from src.application.service.DesktopIdentity import DesktopIdentity
 from src.application.service.EventManager import EventManager
 from src.application.service.FontProvider import FontProvider
 from src.application.service.IconProvider import IconProvider
@@ -42,6 +41,7 @@ from src.manager.ViewManager import ViewManager
 
 class SortMyShit:
     services = [
+        DesktopIdentity,
         EventManager,
         SettingsRepository,
         FileInfoRepository,
@@ -99,7 +99,7 @@ class SortMyShit:
         service_manager.get_service("SettingsRepository").runDir = RunDirectory.resolve()
         service_manager.get_service("LogFileLogger").activate_logging()
 
-        root = Tk()
+        root = service_manager.get_service("DesktopIdentity").window()
 
         view_manager.set_views(SortMyShit.views)
 

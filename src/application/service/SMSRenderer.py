@@ -60,7 +60,6 @@ class SMSRenderer:
         tk_font.nametofont("TkDefaultFont").configure(family=Typography.FAMILY, size=11)
         tk_font.nametofont("TkMenuFont").configure(family=Typography.FAMILY, size=11)
 
-        root.title("SortMyShit")
         # True so the dialogs the views open carry the icon as well.
         root.iconphoto(True, self.icon_provider.get())
         root.geometry(self.WINDOW_SIZE)

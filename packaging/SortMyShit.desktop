@@ -1,10 +1,15 @@
 [Desktop Entry]
 Type=Application
-Name=SortMyShit
+Name=Sort My Shit
 GenericName=File sorter
 Comment=Sort files by type, and clear out duplicates, empty files and empty folders
 Exec=SortMyShit
 Icon=SortMyShit
 Terminal=false
+# The WM_CLASS Tk puts on the window, which is what the desktop matches this entry
+# against. Without it the window belongs to no launcher and is given an icon of its own,
+# beside this one, labelled with the class instead of the name above. DesktopIdentity
+# decides it, and DesktopIdentityTest holds the two together.
+StartupWMClass=Sortmyshit
 Categories=Utility;FileTools;
 Keywords=sort;files;duplicates;cleanup;

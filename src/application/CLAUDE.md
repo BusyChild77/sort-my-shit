@@ -126,6 +126,13 @@ Nothing is replaced without a `messagebox` answer first. The Settings screen pas
 `announce` callback to get the outcome as a line of text; the startup check passes none,
 so it stays silent unless there is something to install.
 
+## Desktop identity (`service/DesktopIdentity.py`)
+
+Builds the root window, because the class name the desktop matches the launcher on can
+only be given to Tk as the window is created. It sets the title too, which is why
+`SMSRenderer` does not. See the desktop identity section of the root `CLAUDE.md` for what
+the packaging has to repeat.
+
 ## Rendering (`service/SMSRenderer.py`)
 
 Owns the window chrome: side bar, menu, keyboard shortcuts, and which view is visible.
