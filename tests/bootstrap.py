@@ -1,6 +1,8 @@
 from unittest import TestLoader, TestSuite, TextTestRunner
 
+from tests.application.service.FontProviderTest import FontProviderTest
 from tests.application.service.IconProviderTest import IconProviderTest
+from tests.application.service.TypographyTest import TypographyTest
 from tests.domain.entity.ThemeTest import ThemeTest
 from tests.domain.entity.VersionTest import VersionTest
 from tests.domain.service.ApplyUpdateTest import ApplyUpdateTest
@@ -19,7 +21,9 @@ from tests.infrastructure.RunDirectoryTest import RunDirectoryTest
 from tests.infrastructure.repository.SettingsRepositoryTest import SettingsRepositoryTest
 
 test_cases = [
+    FontProviderTest,
     IconProviderTest,
+    TypographyTest,
     ThemeTest,
     VersionTest,
     ApplyUpdateTest,

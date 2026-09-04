@@ -150,4 +150,10 @@ See CONTRIBUTING.md and LICENSE files for more details
 
 ## Acknowledgments
 
+The titles are set in [Monometric](https://www.dafont.com/monometric.font) by Will
+Stewart, released as 100% Free, which ships as `src/application/assets/title-font.otf`.
+The copyright string inside the file names Adobe: that is the placeholder Fontself Maker
+writes when the field is left empty, not a claim by Adobe — the file carries no licence
+text, no vendor and no restriction on embedding it.
+
 Thanks to the open-source community for inspiration and support!

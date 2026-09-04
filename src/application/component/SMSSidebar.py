@@ -25,7 +25,7 @@ class SMSSidebar(Frame):
 
         SMSLabel(
             container=self,
-            text="SortMyShit",
+            text=Typography.in_title_case("SortMyShit"),
             bg=theme.surface,
             fg=theme.text,
             font=Typography.TITLE,

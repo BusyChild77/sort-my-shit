@@ -1,6 +1,7 @@
 from tkinter import Tk
 
 from src.application.service.EventManager import EventManager
+from src.application.service.FontProvider import FontProvider
 from src.application.service.IconProvider import IconProvider
 from src.application.service.SMSRenderer import SMSRenderer
 from src.application.service.ThemeProvider import ThemeProvider
@@ -50,6 +51,7 @@ class SortMyShit:
         LogFileLogger,
         ThemeProvider,
         IconProvider,
+        FontProvider,
         CompareFileName,
         CompareBinary,
         ResolveCategory,

@@ -71,7 +71,7 @@ class SMSView(ABC, Frame):
 
         SMSLabel(
             container=header,
-            text=text,
+            text=Typography.in_title_case(text),
             bg=self.theme.background,
             fg=self.theme.text,
             font=Typography.TITLE,

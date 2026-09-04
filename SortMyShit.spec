@@ -8,6 +8,7 @@ icon travel inside the executable, where IconProvider reads it back at startup.
 from sys import platform
 
 WINDOW_ICON = "src/application/assets/icon.png"
+TITLE_FONT = "src/application/assets/title-font.otf"
 EXECUTABLE_ICON = {
     "win32": "src/application/assets/icon.ico",
     "darwin": "src/application/assets/icon.icns",
@@ -15,8 +16,12 @@ EXECUTABLE_ICON = {
 
 analysis = Analysis(  # noqa: F821 - injected by PyInstaller
     ["Main.py"],
-    # Only the window icon is read at runtime; the .ico and .icns are build inputs.
-    datas=[(WINDOW_ICON, "src/application/assets")],
+    # Only the window icon and the title font are read at runtime; the .ico and .icns
+    # are build inputs.
+    datas=[
+        (WINDOW_ICON, "src/application/assets"),
+        (TITLE_FONT, "src/application/assets"),
+    ],
 )
 
 executable = EXE(  # noqa: F821 - injected by PyInstaller

@@ -2,6 +2,7 @@ from tkinter import Tk, Frame, Menu, font as tk_font
 
 from src.application.component.SMSSidebar import SMSSidebar
 from src.application.service.EventManager import EventManager
+from src.application.service.FontProvider import FontProvider
 from src.application.service.IconProvider import IconProvider
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.UpdatePrompt import UpdatePrompt
@@ -34,17 +35,22 @@ class SMSRenderer:
         theme_provider: ThemeProvider,
         event_manager: EventManager,
         icon_provider: IconProvider,
+        font_provider: FontProvider,
         update_prompt: UpdatePrompt,
     ):
         self.theme_provider = theme_provider
         self.event_manager = event_manager
         self.icon_provider = icon_provider
+        self.font_provider = font_provider
         self.update_prompt = update_prompt
         self.current_view_name = "sort_files"
 
     def render(self, root: Tk, view_manager: ViewManager):
         self.root = root
         self.view_manager = view_manager
+
+        # Before the families are read, or the title font would not be among them.
+        self.font_provider.register()
 
         Typography.resolve_families(tk_font.families(root))
         tk_font.nametofont("TkDefaultFont").configure(family=Typography.FAMILY, size=11)
