@@ -14,6 +14,7 @@ class SMSLabel(Label):
         padx: int = 0,
         pady: int = 0,
         anchor: str = "w",
+        wraplength: int = 0,
     ):
         self.text_variable = StringVar(container, text)
 
@@ -26,6 +27,8 @@ class SMSLabel(Label):
             pady=pady,
             anchor=anchor,
             justify="left",
+            # 0 is Tk's own "never wrap", which is what every other label wants.
+            wraplength=wraplength,
             font=font or Typography.BODY,
         )
 

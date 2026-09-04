@@ -2,6 +2,7 @@ from unittest import TestLoader, TestSuite, TextTestRunner
 
 from tests.application.service.FontProviderTest import FontProviderTest
 from tests.application.service.IconProviderTest import IconProviderTest
+from tests.application.service.TaglineProviderTest import TaglineProviderTest
 from tests.application.service.TypographyTest import TypographyTest
 from tests.domain.entity.ThemeTest import ThemeTest
 from tests.domain.entity.VersionTest import VersionTest
@@ -23,6 +24,7 @@ from tests.infrastructure.repository.SettingsRepositoryTest import SettingsRepos
 test_cases = [
     FontProviderTest,
     IconProviderTest,
+    TaglineProviderTest,
     TypographyTest,
     ThemeTest,
     VersionTest,

@@ -4,6 +4,7 @@ from src.application.service.EventManager import EventManager
 from src.application.service.FontProvider import FontProvider
 from src.application.service.IconProvider import IconProvider
 from src.application.service.SMSRenderer import SMSRenderer
+from src.application.service.TaglineProvider import TaglineProvider
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.UpdatePrompt import UpdatePrompt
 from src.application.view.AppearanceView import AppearanceView
@@ -52,6 +53,7 @@ class SortMyShit:
         ThemeProvider,
         IconProvider,
         FontProvider,
+        TaglineProvider,
         CompareFileName,
         CompareBinary,
         ResolveCategory,

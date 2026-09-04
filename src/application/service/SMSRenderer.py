@@ -4,6 +4,7 @@ from src.application.component.SMSSidebar import SMSSidebar
 from src.application.service.EventManager import EventManager
 from src.application.service.FontProvider import FontProvider
 from src.application.service.IconProvider import IconProvider
+from src.application.service.TaglineProvider import TaglineProvider
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.UpdatePrompt import UpdatePrompt
 from src.application.service.Typography import Typography
@@ -16,8 +17,9 @@ class SMSRenderer:
 
     WINDOW_SIZE = "1600x900"
 
-    # Below this the toolbars and the two folder columns start fighting for room.
-    WINDOW_MINIMUM_WIDTH = 1100
+    # Below this the toolbars and the two folder columns start fighting for room; the
+    # side bar takes its width out of the window, so it is counted in here.
+    WINDOW_MINIMUM_WIDTH = 1150
     WINDOW_MINIMUM_HEIGHT = 640
 
     NAVIGATION = [
@@ -36,12 +38,14 @@ class SMSRenderer:
         event_manager: EventManager,
         icon_provider: IconProvider,
         font_provider: FontProvider,
+        tagline_provider: TaglineProvider,
         update_prompt: UpdatePrompt,
     ):
         self.theme_provider = theme_provider
         self.event_manager = event_manager
         self.icon_provider = icon_provider
         self.font_provider = font_provider
+        self.tagline_provider = tagline_provider
         self.update_prompt = update_prompt
         self.current_view_name = "sort_files"
 
@@ -105,6 +109,8 @@ class SMSRenderer:
             container=self.chrome,
             theme=theme,
             entries=self.NAVIGATION,
+            logo=self.icon_provider.logo(),
+            tagline=self.tagline_provider.get(),
             on_select=self.change_view,
         )
         self.sidebar.grid(row=0, column=0, sticky="ns")

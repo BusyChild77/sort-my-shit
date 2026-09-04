@@ -98,6 +98,21 @@ its own and drops an icon that gets garbage collected. `SMSRenderer` applies it 
 through the sources and through the PyInstaller bundle, never through the current working
 directory — see the packaging section of the root `CLAUDE.md`.
 
+`logo()` hands back the same artwork at `LOGO_SIZE`, for the side bar wordmark. Tk only
+shrinks an image by keeping one pixel out of every n, so the artwork stays a square whose
+side divides cleanly by that size, and the logo is cached like the icon it comes from.
+
+## Tagline (`service/TaglineProvider.py`)
+
+The line under the wordmark, drawn from `TAGLINES` **once per run** and held: the side bar
+is rebuilt whenever the theme changes, and a line picked again on each rebuild would move
+under the user. Adding a sentence is one entry in that tuple — the side bar wraps it, so
+its length is free.
+
+The side bar is the one part of the window with a width in pixels; everything it holds is
+sized from `SMSSidebar.inner_width` rather than from a number of its own, so widening it
+for a longer wordmark keeps the entries and the tagline in step.
+
 ## Updating (`service/UpdatePrompt.py`)
 
 The one place that talks to the user about versions, shared by the startup check

@@ -17,8 +17,13 @@ class IconProvider:
     ICON_FILE = "icon.png"
     BUNDLED_ASSETS = os_path.join("src", "application", "assets")
 
+    # The side of the logo shown beside the side bar wordmark, in pixels. The artwork is
+    # square and much larger, and Tk only shrinks an image by whole divisions of it.
+    LOGO_SIZE = 32
+
     def __init__(self):
         self.icon = None
+        self.logo_image = None
 
     def get(self) -> PhotoImage:
         # Tk keeps no reference of its own and drops the icon as soon as the
@@ -27,6 +32,21 @@ class IconProvider:
             self.icon = PhotoImage(file=self.path())
 
         return self.icon
+
+    def logo(self) -> PhotoImage:
+        """The same artwork, small enough to sit beside a line of text."""
+        if self.logo_image is None:
+            icon = self.get()
+            self.logo_image = icon.subsample(self.scale_factor(icon.width()))
+
+        return self.logo_image
+
+    @classmethod
+    def scale_factor(cls, width: int) -> int:
+        """Tk subsamples by keeping one pixel out of every n, so the divisor is what is
+        computed here rather than a target size -- and it is never zero, whatever the
+        icon happens to measure."""
+        return max(1, width // cls.LOGO_SIZE)
 
     def path(self) -> str:
         bundle = getattr(sys, "_MEIPASS", None)
