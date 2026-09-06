@@ -1,4 +1,8 @@
+
 # SortMyShit
+
+[![Download SortMyShit](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/sortmyshit/files/latest/download)
+
 
 SortMyShit is an open-source Python project designed to help you organize and manage your files effortlessly. It provides customizable sorting rules to keep your directories clean and structured.
 
