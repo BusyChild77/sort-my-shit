@@ -3,7 +3,9 @@ from tkinter import BooleanVar
 from src.application.component.SMSButton import SMSButton
 from src.application.component.SMSCheckButton import SMSCheckButton
 from src.application.component.SMSLabel import SMSLabel
+from src.application.component.SMSLink import SMSLink
 from src.application.component.SMSSection import SMSSection
+from src.application.service.Donation import Donation
 from src.application.service.EventManager import EventManager
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.Typography import Typography
@@ -17,6 +19,11 @@ class SettingsView(SMSView):
     """The options that change how an action behaves. The folders each action works on
     are picked on the action's own screen."""
 
+    # A paragraph left to itself makes its section as wide as its longest sentence,
+    # and two of those no longer fit side by side. Wrapped short of the longest option
+    # on the screen, so it is never the paragraph that decides the column count.
+    BLURB_WRAP_LENGTH = 480
+
     def __init__(
         self,
         container,
@@ -28,6 +35,7 @@ class SettingsView(SMSView):
         self.settings_repository = settings_repository
         self.update_prompt = update_prompt
         self.update_state = None
+        self.donation_state = None
 
         super().__init__(container, theme_provider, event_manager)
 
@@ -41,6 +49,7 @@ class SettingsView(SMSView):
             self.__create_duplicates_section,
             self.__create_general_section,
             self.__create_updates_section,
+            self.__create_support_section,
         ])
 
     def __create_sorting_section(self, container) -> SMSSection:
@@ -128,6 +137,45 @@ class SettingsView(SMSView):
         self.update_state.grid(row=2, column=0, sticky="w", pady=(6, 0))
 
         return section
+
+    def __create_support_section(self, container) -> SMSSection:
+        section = SMSSection(container, self.theme, "Support")
+
+        SMSLabel(
+            container=section.get_body(),
+            text=Donation.BLURB,
+            bg=self.theme.background,
+            fg=self.theme.muted,
+            font=Typography.SMALL,
+            wraplength=self.BLURB_WRAP_LENGTH,
+        ).grid(row=0, column=0, sticky="w")
+
+        SMSLink(
+            container=section.get_body(),
+            theme=self.theme,
+            text=Donation.CALL_TO_ACTION,
+            url=Donation.URL,
+            on_failure=self.__hand_over_the_link,
+        ).grid(row=1, column=0, sticky="w", pady=(10, 0))
+
+        self.donation_state = SMSLabel(
+            container=section.get_body(),
+            text=Donation.readable_url(),
+            bg=self.theme.background,
+            fg=self.theme.muted,
+            font=Typography.SMALL,
+        )
+        self.donation_state.grid(row=2, column=0, sticky="w", pady=(6, 0))
+
+        return section
+
+    def __hand_over_the_link(self, url: str):
+        """No browser opened, so the address goes to the clipboard rather than nowhere:
+        the line under the link is already showing it, and a user reading it has no way
+        of copying it out of a label."""
+        self.clipboard_clear()
+        self.clipboard_append(url)
+        self.donation_state.set_text(f"Could not open a browser. Link copied: {Donation.readable_url()}")
 
     def __check_for_updates(self):
         self.update_prompt.check(self, announce=self.__announce_update)

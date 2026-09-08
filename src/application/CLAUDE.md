@@ -113,6 +113,19 @@ The side bar is the one part of the window with a width in pixels; everything it
 sized from `SMSSidebar.inner_width` rather than from a number of its own, so widening it
 for a longer wordmark keeps the entries and the tagline in step.
 
+## Donating (`service/Donation.py`)
+
+The address the Support section of the Settings screen sends a user to, and the copy
+written around it. The handle is also declared in `.github/FUNDING.yml`, for the Sponsor
+button GitHub puts on the repository, so **the two are held together by `DonationTest`**:
+nothing breaks when they drift, the users who click one of them simply land on somebody
+else's page.
+
+`SMSLink` is what opens it. There is no browser to open on every machine, so a refusal is
+handed back to the view rather than swallowed, and the Settings screen puts the address
+on the clipboard instead — the link is the whole point of the widget, and a user has no
+way of copying a Tk label.
+
 ## Updating (`service/UpdatePrompt.py`)
 
 The one place that talks to the user about versions, shared by the startup check

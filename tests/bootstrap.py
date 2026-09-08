@@ -1,6 +1,7 @@
 from unittest import TestLoader, TestSuite, TextTestRunner
 
 from tests.application.service.DesktopIdentityTest import DesktopIdentityTest
+from tests.application.service.DonationTest import DonationTest
 from tests.application.service.FontProviderTest import FontProviderTest
 from tests.application.service.IconProviderTest import IconProviderTest
 from tests.application.service.TaglineProviderTest import TaglineProviderTest
@@ -24,6 +25,7 @@ from tests.infrastructure.repository.SettingsRepositoryTest import SettingsRepos
 
 test_cases = [
     DesktopIdentityTest,
+    DonationTest,
     FontProviderTest,
     IconProviderTest,
     TaglineProviderTest,
