@@ -28,17 +28,30 @@ class CompareBinary:
             file2.full_path != file1.full_path
             and file2.partial_contents == file1.partial_contents
         ):
+            return self.__have_identical_contents(file1, file2)
+
+        return False
+
+    def __have_identical_contents(self, file1: FileInfo, file2: FileInfo) -> bool:
+        """Both files are read whole here, which is where a slow or flaky folder shows
+        up: a read that fails says nothing about whether the two match, so it answers
+        "not a duplicate" rather than raising. Nothing is deleted on a maybe, and one
+        unreadable file does not end an analysis that has already read thousands."""
+        try:
             file_info1 = self.file_info_repository.fetch_one(
                 file1.full_path, with_full_contents=True
             )
             file_info2 = self.file_info_repository.fetch_one(
                 file2.full_path, with_full_contents=True
             )
+        except OSError as failure:
+            self.event_manager.trigger(
+                "output",
+                f"Could not compare {file1.full_path} with {file2.full_path}: {failure}"
+            )
+            return False
 
-            if file_info1.contents == file_info2.contents:
-                return True
-
-        return False
+        return file_info1.contents == file_info2.contents
 
     def __files_match_required_size(self, file: FileInfo, file_looked_up: FileInfo):
         return (

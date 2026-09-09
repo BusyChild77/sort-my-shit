@@ -8,6 +8,8 @@ from src.application.service.EventManager import EventManager
 
 
 class FileInfoRepository(FileInfoRepositoryInterface):
+    PARTIAL_CONTENTS_LENGTH = 128
+
     def __init__(
         self,
         settings_repository: SettingsRepository,
@@ -29,32 +31,10 @@ class FileInfoRepository(FileInfoRepositoryInterface):
         all_files = []
 
         for file_full_path in all_file_full_paths:
-            if not os_path.isfile(file_full_path):
-                continue
+            file_info = self.__fetch_from_folder(file_full_path, skip_empty_files, skip_large_files)
 
-            if (
-                os_path.getsize(file_full_path)
-                > self.settings_repository.fetch_one("binary_comparison_large_files_threshold")
-                and self.settings_repository.fetch_one("binary_search") is True
-                and self.settings_repository.fetch_one("binary_search_large_files") is False
-                and skip_large_files
-            ):
-                self.event_manager.trigger("output", "Skipping large file " + file_full_path)
-            else:
-                with open(file_full_path, "rb") as f:
-                    file_partial_contents = f.read(128)
-
-                    if len(file_partial_contents) == 0 and skip_empty_files:
-                        self.event_manager.trigger("output", "Skipping empty File " + file_full_path)
-                    else:
-                        all_files.append(
-                            FileInfo(
-                                full_path=file_full_path,
-                                file_name=os_path.basename(file_full_path),
-                                size=os_path.getsize(file_full_path),
-                                partial_contents=file_partial_contents,
-                            )
-                        )
+            if file_info is not None:
+                all_files.append(file_info)
 
         return all_files
 
@@ -63,7 +43,7 @@ class FileInfoRepository(FileInfoRepositoryInterface):
     ) -> FileInfo:
         file_contents = None
         with open(full_path, read_mode) as file_opened:
-            file_partial_contents = file_opened.read(128)
+            file_partial_contents = file_opened.read(self.PARTIAL_CONTENTS_LENGTH)
             if with_full_contents:
                 file_contents = file_opened.read()
 
@@ -78,3 +58,47 @@ class FileInfoRepository(FileInfoRepositoryInterface):
     def remove_one(self, file_path: str):
         os_remove(file_path)
         self.event_manager.trigger("output", "Removed file " + file_path)
+
+    def __fetch_from_folder(self, file_full_path: str, skip_empty_files: bool, skip_large_files: bool) -> FileInfo:
+        """None for a file this scan is not to work on, and for one that could not be
+        read at all.
+
+        A file that fails to open is dropped rather than handed on half filled: what
+        reads these is also what deletes them, and a file whose contents never arrived
+        is indistinguishable from an empty one once it is in the list. A share that goes
+        down mid scan therefore costs the files it took with it, and nothing else.
+        """
+        if not os_path.isfile(file_full_path):
+            return None
+
+        try:
+            size = os_path.getsize(file_full_path)
+
+            if self.__is_skipped_as_large(size, skip_large_files):
+                self.event_manager.trigger("output", "Skipping large file " + file_full_path)
+                return None
+
+            with open(file_full_path, "rb") as file_opened:
+                file_partial_contents = file_opened.read(self.PARTIAL_CONTENTS_LENGTH)
+        except OSError as failure:
+            self.event_manager.trigger("output", f"Skipping unreadable file {file_full_path}: {failure}")
+            return None
+
+        if len(file_partial_contents) == 0 and skip_empty_files:
+            self.event_manager.trigger("output", "Skipping empty File " + file_full_path)
+            return None
+
+        return FileInfo(
+            full_path=file_full_path,
+            file_name=os_path.basename(file_full_path),
+            size=size,
+            partial_contents=file_partial_contents,
+        )
+
+    def __is_skipped_as_large(self, size: int, skip_large_files: bool) -> bool:
+        return (
+            size > self.settings_repository.fetch_one("binary_comparison_large_files_threshold")
+            and self.settings_repository.fetch_one("binary_search") is True
+            and self.settings_repository.fetch_one("binary_search_large_files") is False
+            and skip_large_files
+        )

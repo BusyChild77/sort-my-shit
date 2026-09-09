@@ -18,8 +18,10 @@ The business logic, and the only layer with no dependency on anything else in th
 - `entity/` — data holders only, no behaviour beyond deriving their own values.
   `Theme` is the exception and owns its color maths, because that is what a palette is.
 - `event/` — the `EventManagerInterface` used to report progress.
+- `task/` — the `CancellationInterface` a long run is stopped through.
 - `repository/` — the interfaces the infrastructure layer implements.
-- `service/` — one folder per verb: `compare/`, `list/`, `remove/`, `sort/`, `update/`.
+- `service/` — one folder per verb: `compare/`, `folder/`, `list/`, `remove/`, `sort/`,
+  `update/`.
 
 ## Sorting
 
@@ -48,6 +50,44 @@ network that they are up to date.
 
 `Version` compares as numbers, never as strings, so `1.0.10` beats `1.0.9`, and anything
 unreadable parses to `0.0.0` — a malformed tag is never newer than what is running.
+
+## Folders that may not be there
+
+A folder here is a path and nothing else, and the path may be a cloud drive, a network
+share or a disk inside a virtual machine. All three go away without warning, and a walk
+over one that has gone finds nothing — which is exactly what a folder with nothing in it
+looks like. **Every service that walks user folders asks `CheckFolder.readable()` first**
+and works on what it hands back, so a share that dropped is reported and skipped rather
+than counted as clean. `CheckFolder.warning()` goes on the end of the count a service
+reports, because the status line is where a user would otherwise read "0 found" as "all
+tidy". A destination is a different question and asks `reachable()`: one that is not
+there yet is created on the way, one behind a mount that says nothing is not.
+
+`FolderState` keeps `MISSING` and `UNREACHABLE` apart for the same reason `CheckForUpdate`
+keeps `UNREACHABLE` out of `UP_TO_DATE`.
+
+## Failing one file at a time
+
+**A single file may fail without ending the run.** Every copy, move and delete is wrapped,
+the failure goes out on `output`, the loop carries on, and the closing status says how
+many could not be done. A share that drops halfway through costs the files it took with
+it and nothing else; raising instead leaves the work half finished and says nothing about
+how far it got.
+
+`RemoveEmptyFile` is the one to be most careful with: **the recorded size and the bytes
+read back both have to say a file is empty** before it is offered up. A cloud placeholder
+and a read that failed both hand back nothing for a file that is not empty, and this is
+the service that deletes them. It asks again at removal time, because a file listed
+minutes ago may have been written to since.
+
+## Cancelling
+
+Anything looping over user data takes a `CancellationInterface` and checks it between two
+files. It is cooperative: a service is never killed, so a run always stops on a whole file
+rather than in the middle of one. `ListDuplicate` checks it in the inner loop as well —
+one pass is a comparison per file and a binary one reads both files whole, which over a
+share is minutes. A cancelled sort returns before deleting emptied source folders: half a
+sort leaves files behind, and the folders holding them are not empty.
 
 ## Progress reporting
 

@@ -12,6 +12,7 @@ from tests.domain.service.ApplyUpdateTest import ApplyUpdateTest
 from tests.domain.service.CheckForUpdateTest import CheckForUpdateTest
 from tests.domain.service.CompareBinaryTest import BinaryComparatorTest
 from tests.domain.service.CompareFileNameTest import FileNameComparatorTest
+from tests.domain.service.CheckFolderTest import CheckFolderTest
 from tests.domain.service.ListDuplicateTest import ListDuplicateTest
 from tests.domain.service.PlanSortTest import PlanSortTest
 from tests.domain.service.RemoveDuplicateTest import RemoveDuplicateTest
@@ -19,6 +20,7 @@ from tests.domain.service.RemoveEmptyFileTest import RemoveEmptyFileTest
 from tests.domain.service.RemoveEmptyFolderTest import RemoveEmptyFolderTest
 from tests.domain.service.ResolveCategoryTest import ResolveCategoryTest
 from tests.domain.service.SortFileTest import SortFileTest
+from tests.infrastructure.repository.FileInfoRepositoryTest import FileInfoRepositoryTest
 from tests.infrastructure.repository.FileSystemRepositoryTest import FileSystemRepositoryTest
 from tests.infrastructure.RunDirectoryTest import RunDirectoryTest
 from tests.infrastructure.repository.SettingsRepositoryTest import SettingsRepositoryTest
@@ -36,6 +38,7 @@ test_cases = [
     CheckForUpdateTest,
     BinaryComparatorTest,
     FileNameComparatorTest,
+    CheckFolderTest,
     ListDuplicateTest,
     PlanSortTest,
     RemoveDuplicateTest,
@@ -43,6 +46,7 @@ test_cases = [
     RemoveEmptyFolderTest,
     ResolveCategoryTest,
     SortFileTest,
+    FileInfoRepositoryTest,
     FileSystemRepositoryTest,
     RunDirectoryTest,
     SettingsRepositoryTest,

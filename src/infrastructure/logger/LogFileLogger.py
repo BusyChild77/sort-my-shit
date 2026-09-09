@@ -1,5 +1,5 @@
 from datetime import datetime
-from os import path as os_path, mkdir as os_mkdir
+from os import path as os_path, makedirs as os_makedirs
 
 from src.application.service.EventManager import EventManager
 from src.infrastructure.repository.SettingsRepository import SettingsRepository
@@ -25,8 +25,9 @@ class LogFileLogger:
         log_dir = os_path.join(self.settings_repository.runDir, "log")
         log_file = os_path.join(log_dir, "log.txt")
 
-        if not os_path.isdir(log_dir):
-            os_mkdir(log_dir)
+        # exist_ok because an action reports from a worker while the interface reports
+        # from the Tk thread, and both of them land here.
+        os_makedirs(log_dir, exist_ok=True)
 
         with open(log_file, "a") as file:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]

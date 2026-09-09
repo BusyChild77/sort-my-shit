@@ -24,10 +24,11 @@ nothing else.
 
 ```
 src/domain/          pure business logic, no tkinter, no os/shutil, no I/O
-  entity/            plain data holders (FileInfo, DuplicateMatch, SortOperation, Theme, Settings, Version, Release)
+  entity/            plain data holders (FileInfo, DuplicateMatch, SortOperation, Theme, Settings, Version, Release, FolderState)
   event/             EventManagerInterface
+  task/              CancellationInterface
   repository/        interfaces the outer layers implement
-  service/           the actual behaviour (compare/, list/, remove/, sort/, update/)
+  service/           the actual behaviour (compare/, folder/, list/, remove/, sort/, update/)
 src/infrastructure/  the outside world: disk access, JSON settings, log file
   repository/        implementations of the domain repository interfaces
   logger/            LogFileLogger
@@ -36,7 +37,7 @@ src/application/     everything tkinter
   assets/            the icon, in the three formats the platforms want
   component/         reusable widgets, all prefixed SMS
   view/              one screen each, subclasses of SMSView
-  service/           EventManager, ThemeProvider, IconProvider, Typography, SMSRenderer, UpdatePrompt
+  service/           EventManager, EventBridge, TaskRunner, ThemeProvider, IconProvider, Typography, SMSRenderer, UpdatePrompt
 src/manager/         ViewManager
 tests/               mirrors src/, see tests/CLAUDE.md
 ```
@@ -155,6 +156,34 @@ is only revealed to the user instead.
 
 The network call and the download run on a worker thread — `UpdatePrompt` marshals every
 widget touch back through `widget.after()`, because Tk is single threaded.
+
+## Folders that are not local
+
+All four actions work on whatever the operating system presents as a path, so a folder is
+supported exactly as far as it is mounted: a cloud drive's sync folder (pCloud, Google
+Drive, Dropbox, rclone), a mounted share or a mapped drive letter, `/mnt/c` under WSL, a
+VirtualBox or VMware share. There is no protocol code and no cloud API anywhere — adding
+one would be a new repository, and the sync folder already covers the case.
+
+Three things follow from that, and each is load bearing:
+
+- **A folder can be typed, not only browsed.** The platform dialog only shows what it
+  already knows about, which leaves out a UNC share, a path under `\\wsl$`, and any mount
+  point it will not descend into. `SMSFolderList` therefore has a field beside its browse
+  button, and nothing typed into it is checked against the disk: a share that is offline
+  right now is still the folder the user means.
+- **A folder that did not answer is never reported as an empty one.** See the domain
+  `CLAUDE.md`: `CheckFolder` runs before every walk, and `FileSystemRepository.probe_folder`
+  gives the stat a deadline because a dead mount blocks rather than failing.
+- **Every action runs in a worker, with a Cancel button.** See the application
+  `CLAUDE.md`. A scan over a share is minutes, and Tk stops painting for all of it
+  otherwise.
+
+Two gaps are known and deliberate. A share that is unmounted but whose mount point still
+exists locally reads as a readable empty folder, which no probe can tell apart without
+reading the mount table. And a duplicate scan still compares every pair of files by
+reading both whole, which is the expensive thing to do over a network; grouping by size
+and digest first is the fix, and it is not done yet.
 
 ## Settings
 

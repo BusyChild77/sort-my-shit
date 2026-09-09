@@ -11,7 +11,14 @@ with the tests that prove it, in the same commit. The critical features are:
   folders merged into one destination, name collisions, copy vs. move, and the deletion of
   source folders left empty;
 - **anything that deletes or moves user data** — duplicate removal, empty file removal,
-  empty folder removal — including the negative cases: what must *not* be touched;
+  empty folder removal — including the negative cases: what must *not* be touched. A file
+  that read back nothing but has a size is one of those: it is a cloud placeholder or a
+  read that failed, and deleting it loses the contents;
+- **folders that may not be there** — that a folder which did not answer is skipped and
+  reported rather than walked and counted as clean, that the probe gives up on its
+  deadline instead of blocking, and that one file or folder failing does not stop the
+  ones after it;
+- **cancelling** — that a cancelled run touches nothing after the file it was on;
 - **duplicate detection** — binary and filename comparison, and the large file rules;
 - **settings** — persistence, defaults for a missing key, and the migration of settings
   written by an older version. A user must never lose their configuration on upgrade;

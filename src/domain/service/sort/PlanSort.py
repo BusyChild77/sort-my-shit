@@ -4,7 +4,9 @@ from src.domain.entity.SortOperation import SortOperation
 from src.domain.event.EventManagerInterface import EventManagerInterface
 from src.domain.repository.FileSystemRepositoryInterface import FileSystemRepositoryInterface
 from src.domain.repository.SettingsRepositoryInterface import SettingsRepositoryInterface
+from src.domain.service.folder.CheckFolder import CheckFolder
 from src.domain.service.sort.ResolveCategory import ResolveCategory
+from src.domain.task.CancellationInterface import CancellationInterface
 
 
 class PlanSort:
@@ -16,11 +18,15 @@ class PlanSort:
         settings_repository: SettingsRepositoryInterface,
         file_system_repository: FileSystemRepositoryInterface,
         category_resolver: ResolveCategory,
+        folder_check: CheckFolder,
+        cancellation: CancellationInterface,
     ):
         self.event_manager = event_manager
         self.settings_repository = settings_repository
         self.file_system_repository = file_system_repository
         self.category_resolver = category_resolver
+        self.folder_check = folder_check
+        self.cancellation = cancellation
 
     def plan(self) -> list[SortOperation]:
         settings = self.settings_repository.fetch_all()
@@ -29,12 +35,22 @@ class PlanSort:
 
         self.event_manager.trigger("status", "Planning the sort")
 
+        # A destination that is not there yet is planned for and created on the way; one
+        # behind a mount that says nothing would fail on every single file instead.
+        if not self.folder_check.reachable(destination_folder):
+            self.event_manager.trigger("status", f"Nothing planned, {destination_folder} could not be reached")
+            return []
+
+        source_folders, unreadable = self.folder_check.readable(
+            [os_path.abspath(source_folder) for source_folder in settings["source_folders"]]
+        )
+
         operations = []
         taken_destinations = set()
 
-        for source_folder in settings["source_folders"]:
+        for source_folder in source_folders:
             operations += self.__plan_source_folder(
-                os_path.abspath(source_folder),
+                source_folder,
                 destination_folder,
                 preserve_folder_tree,
                 taken_destinations,
@@ -42,7 +58,8 @@ class PlanSort:
 
         self.event_manager.trigger(
             "status",
-            f"{len(operations)} file(s) to sort into {destination_folder}"
+            f"{len(operations)} file(s) to sort into {destination_folder}."
+            + self.folder_check.warning(unreadable)
         )
 
         return operations
@@ -54,13 +71,12 @@ class PlanSort:
         preserve_folder_tree: bool,
         taken_destinations: set,
     ) -> list[SortOperation]:
-        if not self.file_system_repository.folder_exists(source_folder):
-            self.event_manager.trigger("output", f"Skipping missing source folder {source_folder}")
-            return []
-
         operations = []
 
         for file_path in sorted(self.file_system_repository.list_file_paths(source_folder)):
+            if self.cancellation.is_cancelled():
+                return operations
+
             if self.__is_inside(file_path, destination_folder):
                 continue
 

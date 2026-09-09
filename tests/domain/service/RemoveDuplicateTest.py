@@ -8,14 +8,20 @@ from src.domain.event.EventManagerInterface import EventManagerInterface
 from src.domain.service.remove.RemoveDuplicate import RemoveDuplicate
 from src.domain.repository.FileInfoRepositoryInterface import FileInfoRepositoryInterface
 from src.domain.entity.DuplicateMatch import DuplicateMatch
+from src.domain.task.CancellationInterface import CancellationInterface
 
 
 class RemoveDuplicateTest(TestCase):
     def setUp(self):
         self.file_info_repository_mock = Mock(FileInfoRepositoryInterface)
+
+        self.cancellation_mock = Mock(CancellationInterface)
+        self.cancellation_mock.is_cancelled.return_value = False
+
         self.remove_duplicate = RemoveDuplicate(
             self.file_info_repository_mock,
             Mock(EventManagerInterface),
+            self.cancellation_mock,
         )
 
         base_path = Path().resolve() / "tests/domain/service/DuplicateTest"
@@ -41,6 +47,27 @@ class RemoveDuplicateTest(TestCase):
         )
 
         self.file_info_repository_mock.remove_one.assert_called_once_with(self.file1_path)
+
+    def test_given_a_file_that_cannot_be_removed_when_removing_then_the_rest_is_still_removed(self):
+        self.file_info_repository_mock.remove_one.side_effect = [OSError("host is down"), None]
+
+        self.remove_duplicate.remove_duplicates(
+            [DuplicateMatch([self.file_info1, self.file_info2], self.file_info2)]
+        )
+
+        self.assertEqual(
+            [call.args[0] for call in self.file_info_repository_mock.remove_one.call_args_list],
+            [self.file1_path, self.file2_path],
+        )
+
+    def test_given_a_cancelled_run_when_removing_duplicates_then_no_file_is_removed(self):
+        self.cancellation_mock.is_cancelled.return_value = True
+
+        self.remove_duplicate.remove_duplicates(
+            [DuplicateMatch([self.file_info1], self.file_info2)]
+        )
+
+        self.file_info_repository_mock.remove_one.assert_not_called()
 
     def _create_file(self, file_path, file_contents):
         with open(file_path, "w") as file:

@@ -5,6 +5,7 @@ from src.domain.event.EventManagerInterface import EventManagerInterface
 from src.domain.repository.FileSystemRepositoryInterface import FileSystemRepositoryInterface
 from src.domain.repository.SettingsRepositoryInterface import SettingsRepositoryInterface
 from src.domain.service.sort.PlanSort import PlanSort
+from src.domain.task.CancellationInterface import CancellationInterface
 
 
 class SortFile:
@@ -14,11 +15,13 @@ class SortFile:
         settings_repository: SettingsRepositoryInterface,
         file_system_repository: FileSystemRepositoryInterface,
         sort_planner: PlanSort,
+        cancellation: CancellationInterface,
     ):
         self.event_manager = event_manager
         self.settings_repository = settings_repository
         self.file_system_repository = file_system_repository
         self.sort_planner = sort_planner
+        self.cancellation = cancellation
 
     def plan_sort(self) -> list[SortOperation]:
         return self.sort_planner.plan()
@@ -28,19 +31,45 @@ class SortFile:
 
         self.event_manager.trigger("status", "Begin moving files to sorted folder")
 
-        for operation in operations:
-            self.__transfer(operation, keep_original_files)
+        failures = 0
+
+        for sorted_so_far, operation in enumerate(operations):
+            if self.cancellation.is_cancelled():
+                self.event_manager.trigger("status", f"Sort cancelled after {sorted_so_far} file(s)")
+                return
+
+            if not self.__transfer(operation, keep_original_files):
+                failures += 1
 
         if not keep_original_files and self.settings_repository.fetch_one("delete_empty_source_folders"):
             self.__delete_empty_source_folders()
 
-        self.event_manager.trigger("status", "Done")
+        self.event_manager.trigger(
+            "status",
+            "Done" if failures == 0 else f"Done, {failures} file(s) could not be transferred"
+        )
 
-    def __transfer(self, operation: SortOperation, keep_original_files: bool) -> None:
+    def __transfer(self, operation: SortOperation, keep_original_files: bool) -> bool:
+        """False when the file could not be transferred.
+
+        One file is allowed to fail without taking the rest of the sort with it: a share
+        that drops halfway through, a destination that refuses the timestamps a copy
+        carries over, a source someone deleted while the preview was on screen. Raising
+        here would leave the run half done and say nothing about how far it got.
+        """
         if not self.file_system_repository.file_exists(operation.source_path):
             self.event_manager.trigger("output", f"Skipping missing file {operation.source_path}")
-            return
+            return True
 
+        try:
+            self.__transfer_to_destination(operation, keep_original_files)
+        except OSError as failure:
+            self.event_manager.trigger("output", f"Could not transfer {operation.source_path}: {failure}")
+            return False
+
+        return True
+
+    def __transfer_to_destination(self, operation: SortOperation, keep_original_files: bool) -> None:
         destination_folder = os_path.dirname(operation.destination_path)
 
         if not self.file_system_repository.folder_exists(destination_folder):
@@ -64,5 +93,13 @@ class SortFile:
 
         for source_folder in self.settings_repository.fetch_one("source_folders"):
             for empty_folder in self.file_system_repository.list_empty_folders(source_folder):
-                self.file_system_repository.remove_folder(empty_folder)
-                self.event_manager.trigger("output", f"Deleted empty source folder {empty_folder}")
+                self.__delete_empty_source_folder(empty_folder)
+
+    def __delete_empty_source_folder(self, empty_folder: str) -> None:
+        try:
+            self.file_system_repository.remove_folder(empty_folder)
+        except OSError as failure:
+            self.event_manager.trigger("output", f"Could not delete empty source folder {empty_folder}: {failure}")
+            return
+
+        self.event_manager.trigger("output", f"Deleted empty source folder {empty_folder}")

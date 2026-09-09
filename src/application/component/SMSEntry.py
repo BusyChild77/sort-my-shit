@@ -1,4 +1,5 @@
 from tkinter import Entry, StringVar, Frame
+from typing import Callable
 
 from src.application.service.Typography import Typography
 from src.domain.entity.Theme import Theme
@@ -14,6 +15,7 @@ class SMSEntry(Frame):
         string_var: StringVar,
         width: int = 50,
         state: str = "normal",
+        on_submit: Callable = None,
     ):
         super().__init__(
             master=container,
@@ -41,5 +43,8 @@ class SMSEntry(Frame):
             state=state,
         )
         self.entry.grid(row=0, column=0, sticky="ew", ipady=6, ipadx=8)
+
+        if on_submit is not None:
+            self.entry.bind("<Return>", lambda event: on_submit())
 
         self.columnconfigure(0, weight=1)

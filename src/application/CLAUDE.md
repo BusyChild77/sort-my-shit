@@ -19,7 +19,8 @@ One screen per file, subclassing `SMSView`, registered under a short name in
 type annotations, so a view asks for what it needs by annotating it.
 
 `SMSView` carries the shared skeleton, and a view composes the parts it needs in
-`create_view()`:
+`create_view()`. A screen with a long action also asks for a `TaskRunner` and passes it
+to `super().__init__`; Settings, Appearance and Console only draw, and leave it out:
 
 - `render_title(text, subtitle)` — heading
 - `render_folders(settings_repository, {setting name: label})` — the folders the screen
@@ -33,6 +34,8 @@ type annotations, so a view asks for what it needs by annotating it.
   empty message when there is nothing to show
 - `render_sections([create_section, …])` — setting sections laid side by side, collapsing
   to a single column when the window is too narrow
+- `run_in_background(work, done)` — runs a scan or a removal in a worker and calls `done`
+  with what it returned, back on the Tk thread
 
 ### Folders live on the screen that uses them
 
@@ -56,6 +59,25 @@ anywhere else will go stale.
 Long running work is triggered from a view but **lives in a domain service**. A view that
 walks folders or moves files itself is in the wrong layer.
 
+### Actions run in a worker
+
+**An action never runs in the button's own callback.** Its folders may be a network share
+or a cloud drive, and Tk is single threaded: the window would stop painting for as long as
+the walk takes, with no way out of it. The four action screens take a `TaskRunner` and go
+through `run_in_background`, which disables the toolbar, leaves Cancel enabled, and hands
+the result back on the Tk thread.
+
+That splits every action in two: the half that starts the work, and the `done` half that
+draws what came back. A screen whose "run" step needs an analysis first starts the analysis
+in the background and calls the run from *its* result, never from a return value.
+
+`SMSView.subscribe` registers an `EventBridge` listener rather than the one it is given,
+so a service reporting from the worker never touches a widget from there. **Status is
+coalesced and output is not**: a binary comparison reports a status per pair of files, and
+queueing every one of those would fill the Tk queue faster than it drains, while an output
+line is the record of something that happened to a file and dropping one loses it from the
+console and the log.
+
 ### The layout is fluid
 
 **The window is resizable**, so nothing may be positioned at a fixed pixel width. A view
@@ -78,6 +100,22 @@ and the gutter is what keeps the truncation readable.
 Use `self.subscribe(event_name, listener)`, never `event_manager.subscribe` directly:
 `SMSView.destroy()` unsubscribes what it registered. Without that, a view destroyed by a
 theme reload keeps receiving events and calls into dead widgets.
+
+## Running actions (`service/TaskRunner.py`, `service/EventBridge.py`)
+
+`TaskRunner` is one shared service and runs **one action at a time**: two of these screens
+share their folders, and two scans deleting out of the same folder would be reading a list
+the other is emptying. It is also the app's `CancellationInterface` — `cancel()` sets the
+flag the domain services read between two files, so a run stops on a whole file rather
+than being killed in the middle of one.
+
+`EventBridge` is not a registered service. Each `SMSView` builds its own with itself as
+the widget, because a bridge is only useful with a widget to hand events back through.
+
+Both catch `RuntimeError` around `widget.after()`: Tk refuses a call from another thread
+unless the main thread is inside `mainloop()`, which is exactly what happens when the
+window is being torn down. There is nobody left to tell at that point, and the runner has
+to free itself there or it stays busy forever.
 
 ## Theme (`service/ThemeProvider.py`)
 

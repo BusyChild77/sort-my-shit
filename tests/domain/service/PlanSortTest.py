@@ -4,8 +4,10 @@ from unittest.mock import Mock
 from src.domain.event.EventManagerInterface import EventManagerInterface
 from src.domain.repository.FileSystemRepositoryInterface import FileSystemRepositoryInterface
 from src.domain.repository.SettingsRepositoryInterface import SettingsRepositoryInterface
+from src.domain.service.folder.CheckFolder import CheckFolder
 from src.domain.service.sort.PlanSort import PlanSort
 from src.domain.service.sort.ResolveCategory import ResolveCategory
+from src.domain.task.CancellationInterface import CancellationInterface
 
 
 class PlanSortTest(TestCase):
@@ -27,11 +29,21 @@ class PlanSortTest(TestCase):
         self.file_system_repository_mock.folder_exists.return_value = True
         self.file_system_repository_mock.file_exists.return_value = False
 
+        self.folder_check_mock = Mock(CheckFolder)
+        self.folder_check_mock.readable.side_effect = lambda folders: (list(folders), [])
+        self.folder_check_mock.reachable.return_value = True
+        self.folder_check_mock.warning.return_value = ""
+
+        self.cancellation_mock = Mock(CancellationInterface)
+        self.cancellation_mock.is_cancelled.return_value = False
+
         self.sort_planner = PlanSort(
             Mock(EventManagerInterface),
             self.settings_repository_mock,
             self.file_system_repository_mock,
             ResolveCategory(self.settings_repository_mock),
+            self.folder_check_mock,
+            self.cancellation_mock,
         )
 
         super().setUp()
@@ -121,10 +133,34 @@ class PlanSortTest(TestCase):
         self.assertEqual(self.sort_planner.plan(), [])
 
     def test_given_a_missing_source_folder_when_planning_then_it_is_skipped(self):
-        self.file_system_repository_mock.folder_exists.return_value = False
+        self.folder_check_mock.readable.side_effect = lambda folders: ([], list(folders))
 
         self.assertEqual(self.sort_planner.plan(), [])
         self.file_system_repository_mock.list_file_paths.assert_not_called()
+
+    def test_given_an_unreachable_destination_when_planning_then_nothing_is_planned(self):
+        """Every file of the sort would fail against it, one message at a time."""
+        self.folder_check_mock.reachable.return_value = False
+        self.__given_files(["/source/report.pdf"])
+
+        self.assertEqual(self.sort_planner.plan(), [])
+        self.file_system_repository_mock.list_file_paths.assert_not_called()
+
+    def test_given_a_cancelled_run_when_planning_then_it_stops_where_it_is(self):
+        self.cancellation_mock.is_cancelled.return_value = True
+        self.__given_files(["/source/report.pdf", "/source/holiday.jpg"])
+
+        self.assertEqual(self.sort_planner.plan(), [])
+
+    def test_given_unreadable_source_folders_when_planning_then_the_readable_ones_are_still_sorted(self):
+        """A share that has gone must not take the folders that are there with it."""
+        self.settings["source_folders"] = ["/downloads", "/nas"]
+        self.folder_check_mock.readable.side_effect = lambda folders: ([folders[0]], [folders[1]])
+        self.file_system_repository_mock.list_file_paths.return_value = ["/downloads/report.pdf"]
+
+        operations = self.sort_planner.plan()
+
+        self.assertEqual([operation.source_path for operation in operations], ["/downloads/report.pdf"])
 
     def __given_files(self, file_paths: list):
         self.file_system_repository_mock.list_file_paths.return_value = file_paths

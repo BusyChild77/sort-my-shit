@@ -1,5 +1,6 @@
 from src.application.component.SMSComparisonCard import SMSComparisonCard
 from src.application.service.EventManager import EventManager
+from src.application.service.TaskRunner import TaskRunner
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.view.SMSView import SMSView
 from src.domain.service.list.ListDuplicate import ListDuplicate
@@ -20,13 +21,14 @@ class RemoveDuplicatesView(SMSView):
         duplicate_remover: RemoveDuplicate,
         tmp_storage_repository: TmpStorageRepository,
         event_manager: EventManager,
+        task_runner: TaskRunner,
     ):
         self.settings_repository = settings_repository
         self.list_duplicates = list_duplicates
         self.duplicate_remover = duplicate_remover
         self.tmp_storage_repository = tmp_storage_repository
 
-        super().__init__(container, theme_provider, event_manager)
+        super().__init__(container, theme_provider, event_manager, task_runner)
 
         self.create_view()
 
@@ -44,8 +46,9 @@ class RemoveDuplicatesView(SMSView):
         self.render_body("Launch an analysis to list the duplicates found in this folder.")
 
     def __list_duplicates(self):
-        duplicate_matches = self.list_duplicates.list_duplicates()
+        self.run_in_background(self.list_duplicates.list_duplicates, self.__listed)
 
+    def __listed(self, duplicate_matches: list):
         self.render_results(
             duplicate_matches,
             lambda duplicate_match: SMSComparisonCard(
@@ -58,9 +61,24 @@ class RemoveDuplicatesView(SMSView):
         self.tmp_storage_repository.save_one(self.STORAGE_KEY, duplicate_matches)
 
     def __remove_duplicates(self):
-        if not self.tmp_storage_repository.has(self.STORAGE_KEY):
-            self.__list_duplicates()
+        """Without an analysis behind it, one runs first: both halves read every file in
+        the folders, so the removal is started from what the analysis came back with."""
+        if self.tmp_storage_repository.has(self.STORAGE_KEY):
+            self.__remove(self.tmp_storage_repository.fetch_one(self.STORAGE_KEY))
+            return
 
-        self.duplicate_remover.remove_duplicates(self.tmp_storage_repository.fetch_one(self.STORAGE_KEY))
+        self.run_in_background(self.list_duplicates.list_duplicates, self.__listed_then_remove)
+
+    def __listed_then_remove(self, duplicate_matches: list):
+        self.__listed(duplicate_matches)
+        self.__remove(duplicate_matches)
+
+    def __remove(self, duplicate_matches: list):
+        self.run_in_background(
+            lambda: self.duplicate_remover.remove_duplicates(duplicate_matches),
+            self.__removed,
+        )
+
+    def __removed(self, result):
         self.render_results([], None)
         self.tmp_storage_repository.remove_one(self.STORAGE_KEY)

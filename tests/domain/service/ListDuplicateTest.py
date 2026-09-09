@@ -10,6 +10,8 @@ from src.domain.service.list.ListDuplicate import ListDuplicate
 from src.domain.service.compare.CompareFileName import CompareFileName
 from src.domain.repository.FileInfoRepositoryInterface import FileInfoRepositoryInterface
 from src.domain.repository.SettingsRepositoryInterface import SettingsRepositoryInterface
+from src.domain.service.folder.CheckFolder import CheckFolder
+from src.domain.task.CancellationInterface import CancellationInterface
 
 
 class ListDuplicateTest(TestCase):
@@ -20,12 +22,21 @@ class ListDuplicateTest(TestCase):
 
         self.file_name_comparator_mock = Mock(CompareFileName)
 
+        self.folder_check_mock = Mock(CheckFolder)
+        self.folder_check_mock.readable.side_effect = lambda folders: (list(folders), [])
+        self.folder_check_mock.warning.return_value = ""
+
+        self.cancellation_mock = Mock(CancellationInterface)
+        self.cancellation_mock.is_cancelled.return_value = False
+
         self.list_duplicate = ListDuplicate(
             Mock(EventManagerInterface),
             self.settings_repository_mock,
             self.file_info_repository_mock,
             self.binary_comparator_mock,
             self.file_name_comparator_mock,
+            self.folder_check_mock,
+            self.cancellation_mock,
         )
 
         base_path = Path().resolve() / "tests/domain/service/DuplicateTest"
@@ -91,6 +102,28 @@ class ListDuplicateTest(TestCase):
 
         self.assertEqual(duplicates[0].files, [self.file_info2])
         self.assertEqual(duplicates[0].duplicate_of, self.file_info1)
+
+    def test_given_an_unreadable_folder_when_listing_duplicates_then_it_is_not_scanned(self):
+        """The folder that did not answer is dropped, not walked and found empty."""
+        self._given_settings(["/downloads", "/nas"], binary_search=True)
+        self.folder_check_mock.readable.side_effect = lambda folders: ([folders[0]], [folders[1]])
+        self.binary_comparator_mock.compare.return_value = False
+        self.file_info_repository_mock.fetch_all_from_folder.return_value = [self.file_info1]
+
+        self.list_duplicate.list_duplicates()
+
+        self.assertEqual(
+            [call[0][0] for call in self.file_info_repository_mock.fetch_all_from_folder.call_args_list],
+            ["/downloads"],
+        )
+
+    def test_given_a_cancelled_run_when_listing_duplicates_then_nothing_is_compared(self):
+        self._given_settings(["/downloads"], binary_search=True)
+        self.cancellation_mock.is_cancelled.return_value = True
+        self.file_info_repository_mock.fetch_all_from_folder.return_value = [self.file_info1, self.file_info2]
+
+        self.assertEqual(self.list_duplicate.list_duplicates(), [])
+        self.binary_comparator_mock.compare.assert_not_called()
 
     def _given_settings(self, folders: list, binary_search: bool):
         settings = {"remove_duplicates_folders": folders, "binary_search": binary_search}

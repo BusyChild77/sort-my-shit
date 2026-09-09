@@ -1,7 +1,10 @@
 from pathlib import Path
 from shutil import rmtree
+from time import sleep
 from unittest import TestCase
+from unittest.mock import patch
 
+from src.domain.entity.FolderState import FolderState
 from src.infrastructure.repository.FileSystemRepository import FileSystemRepository
 
 
@@ -17,6 +20,49 @@ class FileSystemRepositoryTest(TestCase):
     def tearDown(self):
         rmtree(self.root_folder, ignore_errors=True)
         super().tearDown()
+
+    def test_given_a_folder_that_is_there_when_probing_it_then_it_is_readable(self):
+        self.__create_folder("nas")
+
+        self.assertEqual(
+            self.file_system_repository.probe_folder(f"{self.root_folder}/nas", 5),
+            FolderState.READABLE,
+        )
+
+    def test_given_a_folder_that_is_not_there_when_probing_it_then_it_is_missing(self):
+        self.assertEqual(
+            self.file_system_repository.probe_folder(f"{self.root_folder}/gone", 5),
+            FolderState.MISSING,
+        )
+
+    def test_given_a_file_when_probing_it_as_a_folder_then_it_is_missing(self):
+        self.__create_file("report.pdf")
+
+        self.assertEqual(
+            self.file_system_repository.probe_folder(f"{self.root_folder}/report.pdf", 5),
+            FolderState.MISSING,
+        )
+
+    def test_given_a_folder_that_does_not_answer_when_probing_it_then_it_is_unreachable(self):
+        """A stat on a share whose server has gone does not fail, it blocks: a hard
+        mounted NFS export waits for the server to come back. The deadline is what turns
+        that freeze into an answer, and the answer is never "there is nothing in it"."""
+        with patch("src.infrastructure.repository.FileSystemRepository.os_path") as os_path_mock:
+            os_path_mock.isdir.side_effect = lambda folder_path: sleep(30)
+
+            self.assertEqual(
+                self.file_system_repository.probe_folder("/mnt/nas", 0.1),
+                FolderState.UNREACHABLE,
+            )
+
+    def test_given_a_folder_refusing_to_be_read_when_probing_it_then_it_is_missing(self):
+        with patch("src.infrastructure.repository.FileSystemRepository.os_path") as os_path_mock:
+            os_path_mock.isdir.side_effect = OSError("permission denied")
+
+            self.assertEqual(
+                self.file_system_repository.probe_folder("/root/private", 5),
+                FolderState.MISSING,
+            )
 
     def test_given_nested_folders_when_listing_files_then_every_file_is_returned(self):
         self.__create_file("report.pdf")

@@ -42,8 +42,16 @@ class SMSButton(Button):
             font=Typography.BUTTON,
         )
 
-        self.bind("<Enter>", lambda event: self.config(background=self.hover_bg))
-        self.bind("<Leave>", lambda event: self.config(background=self.idle_bg))
+        self.bind("<Enter>", lambda event: self.__hover(self.hover_bg))
+        self.bind("<Leave>", lambda event: self.__hover(self.idle_bg))
+
+    def __hover(self, background: str):
+        # Tk keeps sending these to a disabled button, and a button that lights up under
+        # the pointer while it refuses to be clicked reads as a broken one.
+        if str(self["state"]) == "disabled":
+            return
+
+        self.config(background=background)
 
     @staticmethod
     def __colors(theme: Theme, variant: str) -> tuple:

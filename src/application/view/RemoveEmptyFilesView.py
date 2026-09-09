@@ -1,5 +1,6 @@
 from src.application.component.SMSFileCard import SMSFileCard
 from src.application.service.EventManager import EventManager
+from src.application.service.TaskRunner import TaskRunner
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.view.SMSView import SMSView
 from src.domain.service.remove.RemoveEmptyFile import RemoveEmptyFile
@@ -18,12 +19,13 @@ class RemoveEmptyFilesView(SMSView):
         remove_empty_file: RemoveEmptyFile,
         tmp_storage_repository: TmpStorageRepository,
         event_manager: EventManager,
+        task_runner: TaskRunner,
     ):
         self.settings_repository = settings_repository
         self.remove_empty_file = remove_empty_file
         self.tmp_storage_repository = tmp_storage_repository
 
-        super().__init__(container, theme_provider, event_manager)
+        super().__init__(container, theme_provider, event_manager, task_runner)
 
         self.create_view()
 
@@ -41,8 +43,9 @@ class RemoveEmptyFilesView(SMSView):
         self.render_body("Launch an analysis to list the empty files found in this folder.")
 
     def __list_empty_files(self):
-        empty_files = self.remove_empty_file.list_empty_files()
+        self.run_in_background(self.remove_empty_file.list_empty_files, self.__listed)
 
+    def __listed(self, empty_files: list):
         self.render_results(
             empty_files,
             lambda empty_file: SMSFileCard(
@@ -56,9 +59,22 @@ class RemoveEmptyFilesView(SMSView):
         self.tmp_storage_repository.save_one(self.STORAGE_KEY, empty_files)
 
     def __remove_empty_files(self):
-        if not self.tmp_storage_repository.has(self.STORAGE_KEY):
-            self.__list_empty_files()
+        if self.tmp_storage_repository.has(self.STORAGE_KEY):
+            self.__remove(self.tmp_storage_repository.fetch_one(self.STORAGE_KEY))
+            return
 
-        self.remove_empty_file.remove_empty_files(self.tmp_storage_repository.fetch_one(self.STORAGE_KEY))
+        self.run_in_background(self.remove_empty_file.list_empty_files, self.__listed_then_remove)
+
+    def __listed_then_remove(self, empty_files: list):
+        self.__listed(empty_files)
+        self.__remove(empty_files)
+
+    def __remove(self, empty_files: list):
+        self.run_in_background(
+            lambda: self.remove_empty_file.remove_empty_files(empty_files),
+            self.__removed,
+        )
+
+    def __removed(self, result):
         self.render_results([], None)
         self.tmp_storage_repository.remove_one(self.STORAGE_KEY)

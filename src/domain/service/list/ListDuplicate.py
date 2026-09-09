@@ -7,6 +7,8 @@ from src.domain.repository.SettingsRepositoryInterface import SettingsRepository
 from src.domain.repository.FileInfoRepositoryInterface import FileInfoRepositoryInterface
 from src.domain.service.compare.CompareBinary import CompareBinary
 from src.domain.service.compare.CompareFileName import CompareFileName
+from src.domain.service.folder.CheckFolder import CheckFolder
+from src.domain.task.CancellationInterface import CancellationInterface
 
 
 class ListDuplicate:
@@ -17,15 +19,23 @@ class ListDuplicate:
         file_info_repository: FileInfoRepositoryInterface,
         binary_comparator: CompareBinary,
         file_name_comparator: CompareFileName,
+        folder_check: CheckFolder,
+        cancellation: CancellationInterface,
     ):
         self.event_manager = event_manager
         self.settings_repository = settings_repository
         self.file_info_repository = file_info_repository
         self.binary_comparator = binary_comparator
         self.file_name_comparator = file_name_comparator
+        self.folder_check = folder_check
+        self.cancellation = cancellation
 
     def list_duplicates(self):
         self.event_manager.trigger("status", "Fetching files")
+
+        folders, unreadable = self.folder_check.readable(
+            self.settings_repository.fetch_one("remove_duplicates_folders")
+        )
 
         duplicate_matches = []
 
@@ -33,13 +43,17 @@ class ListDuplicate:
 
         # Every folder into one list, so a file in one folder is matched against a copy
         # of itself sitting in another.
-        for folder in self.settings_repository.fetch_one("remove_duplicates_folders"):
+        for folder in folders:
             all_files += self.file_info_repository.fetch_all_from_folder(folder)
 
         self.event_manager.trigger("status", "Processing files")
 
         file: FileInfo
         for file in all_files:
+            if self.cancellation.is_cancelled():
+                self.event_manager.trigger("status", "Analysis cancelled")
+                return duplicate_matches
+
             if not os_path.isfile(file.full_path):
                 continue
 
@@ -51,7 +65,10 @@ class ListDuplicate:
             if duplicate_match is not None:
                 duplicate_matches.append(duplicate_match)
 
-        self.event_manager.trigger("status", "Done")
+        self.event_manager.trigger(
+            "status",
+            f"Done. {len(duplicate_matches)} duplicate(s) found." + self.folder_check.warning(unreadable)
+        )
 
         return duplicate_matches
 
@@ -65,6 +82,11 @@ class ListDuplicate:
         files = []
 
         for file in all_files:
+            # Checked in here too: one pass over the list is a comparison per file, and
+            # a binary one reads both of them whole. On a share that is minutes.
+            if self.cancellation.is_cancelled():
+                return None
+
             if not os_path.isfile(file.full_path):
                 continue
 
@@ -87,6 +109,9 @@ class ListDuplicate:
         files = []
 
         for file in all_files:
+            if self.cancellation.is_cancelled():
+                return None
+
             if not os_path.isfile(file.full_path):
                 continue
 

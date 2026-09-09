@@ -4,6 +4,7 @@ from src.application.service.FontProvider import FontProvider
 from src.application.service.IconProvider import IconProvider
 from src.application.service.SMSRenderer import SMSRenderer
 from src.application.service.TaglineProvider import TaglineProvider
+from src.application.service.TaskRunner import TaskRunner
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.UpdatePrompt import UpdatePrompt
 from src.application.view.AppearanceView import AppearanceView
@@ -16,6 +17,7 @@ from src.application.view.SortFilesView import SortFilesView
 
 from src.domain.service.compare.CompareBinary import CompareBinary
 from src.domain.service.compare.CompareFileName import CompareFileName
+from src.domain.service.folder.CheckFolder import CheckFolder
 from src.domain.service.list.ListDuplicate import ListDuplicate
 from src.domain.service.remove.RemoveDuplicate import RemoveDuplicate
 from src.domain.service.remove.RemoveEmptyFile import RemoveEmptyFile
@@ -43,6 +45,7 @@ class SortMyShit:
     services = [
         DesktopIdentity,
         EventManager,
+        TaskRunner,
         SettingsRepository,
         FileInfoRepository,
         FileSystemRepository,
@@ -56,6 +59,7 @@ class SortMyShit:
         TaglineProvider,
         CompareFileName,
         CompareBinary,
+        CheckFolder,
         ResolveCategory,
         PlanSort,
         SortFile,
@@ -75,6 +79,7 @@ class SortMyShit:
         "FileSystemRepositoryInterface": FileSystemRepository,
         "TmpStorageRepositoryInterface": TmpStorageRepository,
         "EventManagerInterface": EventManager,
+        "CancellationInterface": TaskRunner,
         "ReleaseRepositoryInterface": GitHubReleaseRepository,
         "InstallationRepositoryInterface": InstallationRepository,
     }

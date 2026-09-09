@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from tkinter import Frame, StringVar
+from tkinter import Frame, StringVar, messagebox
+from typing import Callable
 
 from src.application.component.SMSButton import SMSButton
 from src.application.component.SMSButtonContainer import SMSButtonContainer
@@ -8,7 +9,9 @@ from src.application.component.SMSInputWithLabel import SMSInputWithLabel
 from src.application.component.SMSLabel import SMSLabel
 from src.application.component.SMSScrollableFrame import SMSScrollableFrame
 from src.application.component.SMSSeparator import SMSSeparator
+from src.application.service.EventBridge import EventBridge
 from src.application.service.EventManager import EventManager
+from src.application.service.TaskRunner import TaskRunner
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.Typography import Typography
 from src.domain.repository.SettingsRepositoryInterface import SettingsRepositoryInterface
@@ -33,14 +36,20 @@ class SMSView(ABC, Frame):
     PADDING = 32
     SECTION_GUTTER = 40
 
+    CANCEL_LABEL = "Cancel"
+
     def __init__(
         self,
         container,
         theme_provider: ThemeProvider,
         event_manager: EventManager,
+        task_runner: TaskRunner = None,
     ):
+        """task_runner is passed by the screens whose buttons start a long action, and
+        left out by the ones that only draw — Settings, Appearance, Console."""
         self.theme = theme_provider.get()
         self.event_manager = event_manager
+        self.task_runner = task_runner
         self.subscriptions = []
         self.current_state = None
         self.body = None
@@ -51,6 +60,8 @@ class SMSView(ABC, Frame):
         self.sections = []
         self.sections_body = None
         self.section_columns = 0
+        self.action_buttons = []
+        self.cancel_button = None
 
         super().__init__(
             container,
@@ -60,6 +71,9 @@ class SMSView(ABC, Frame):
         )
         self.columnconfigure(0, weight=1)
         self.rowconfigure(self.ROW_BODY, weight=1)
+
+        # After the Frame exists: it is the widget the events are handed back through.
+        self.event_bridge = EventBridge(self)
 
     @abstractmethod
     def create_view(self):
@@ -118,9 +132,14 @@ class SMSView(ABC, Frame):
         self.__render_folder_settings()
 
     def render_toolbar(self, buttons: list) -> SMSButtonContainer:
-        """buttons: a list of (label, command, variant) tuples."""
+        """buttons: a list of (label, command, variant) tuples.
+
+        A screen holding a task runner gets a Cancel button after them, enabled only
+        while one of its actions is running.
+        """
         toolbar = SMSButtonContainer(container=self, theme=self.theme, direction="horizontal")
-        toolbar.set_buttons([
+
+        self.action_buttons = [
             SMSButton(
                 container=toolbar,
                 theme=self.theme,
@@ -130,10 +149,37 @@ class SMSView(ABC, Frame):
                 width=len(label) + 2,
             )
             for label, command, variant in buttons
-        ])
+        ]
+
+        if self.task_runner is not None:
+            self.cancel_button = SMSButton(
+                container=toolbar,
+                theme=self.theme,
+                text=self.CANCEL_LABEL,
+                command=self.__cancel,
+                variant="ghost",
+                width=len(self.CANCEL_LABEL) + 2,
+            )
+            self.cancel_button.config(state="disabled")
+
+        toolbar.set_buttons(self.action_buttons + ([] if self.cancel_button is None else [self.cancel_button]))
         toolbar.grid(row=self.ROW_TOOLBAR, column=0, sticky="w", pady=(20, 14))
 
         return toolbar
+
+    def run_in_background(self, work: Callable, done: Callable):
+        """Run a scan or a removal in a worker, and call done with what it returned once
+        it is back on the Tk thread. The toolbar is disabled meanwhile, and Cancel is
+        not: the folders may be on a share that answers slowly or not at all, and the
+        window has to stay usable for as long as that takes."""
+        if not self.task_runner.run(self, work, lambda result: self.__ran(done, result), self.__failed):
+            messagebox.showinfo(
+                "Already running",
+                "Another action is still running. Cancel it, or wait for it to finish.",
+            )
+            return
+
+        self.__set_busy(True)
 
     def render_sections(self, create_sections: list) -> Frame:
         """Lay out setting sections side by side, falling back to a single column when
@@ -197,9 +243,16 @@ class SMSView(ABC, Frame):
             create_card(item).grid(row=row, column=0, sticky="ew", pady=3)
 
     def subscribe(self, event_name: str, listener):
-        """Subscribe for as long as the view lives, listeners are dropped on destroy."""
-        self.event_manager.subscribe(event_name, listener)
-        self.subscriptions.append((event_name, listener))
+        """Subscribe for as long as the view lives, listeners are dropped on destroy.
+
+        What is registered is the bridge's listener, not the one given: an action runs
+        in a worker, and a listener drawing into a widget from there would be touching
+        Tk off its own thread.
+        """
+        bridged = self.event_bridge.listener_for(event_name, listener)
+
+        self.event_manager.subscribe(event_name, bridged)
+        self.subscriptions.append((event_name, bridged))
 
     def destroy(self):
         for event_name, listener in self.subscriptions:
@@ -207,6 +260,31 @@ class SMSView(ABC, Frame):
         self.subscriptions.clear()
 
         super().destroy()
+
+    def __cancel(self):
+        self.task_runner.cancel()
+        self.event_manager.trigger("status", "Cancelling, finishing the file in hand...")
+        self.cancel_button.config(state="disabled")
+
+    def __ran(self, done: Callable, result):
+        self.__set_busy(False)
+
+        if self.winfo_exists():
+            done(result)
+
+    def __failed(self, failure: Exception):
+        self.__set_busy(False)
+        self.event_manager.trigger("output", f"The action stopped: {failure}")
+        messagebox.showerror("Action failed", f"The action could not be completed.\n\n{failure}")
+
+    def __set_busy(self, busy: bool):
+        if not self.winfo_exists():
+            return
+
+        for button in self.action_buttons:
+            button.config(state="disabled" if busy else "normal")
+
+        self.cancel_button.config(state="normal" if busy else "disabled")
 
     def __reflow_sections(self):
         columns = self.__section_columns_that_fit()

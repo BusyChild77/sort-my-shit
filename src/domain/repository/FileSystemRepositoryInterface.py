@@ -3,6 +3,16 @@ from abc import ABC, abstractmethod
 
 class FileSystemRepositoryInterface(ABC):
     @abstractmethod
+    def probe_folder(self, folder_path: str, timeout_in_seconds: float) -> str:
+        """One of the FolderState constants, within the deadline given.
+
+        folder_exists answers whether a folder is there and takes as long as the
+        filesystem holding it decides to take. This one answers UNREACHABLE instead of
+        waiting forever, which is what a disconnected share needs.
+        """
+        pass
+
+    @abstractmethod
     def list_file_paths(self, folder_path: str) -> list[str]:
         pass
 
