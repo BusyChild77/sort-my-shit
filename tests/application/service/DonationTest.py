@@ -24,10 +24,13 @@ class DonationTest(TestCase):
         """A donation page reached over plain http is one a user should not be sent to."""
         self.assertTrue(Donation.URL.startswith("https://"))
 
-    def test_given_the_link_when_writing_it_under_the_call_to_action_then_it_is_readable_and_complete(self):
-        """What is left to a user whose machine opens no browser, so it has to be the
-        whole address minus the noise -- typing it back in has to land on the page."""
-        self.assertEqual(Donation.readable_url(), f"buymeacoffee.com/{Donation.HANDLE}")
+    def test_given_the_monthly_link_when_reading_it_then_it_is_a_patreon_page_served_over_https(self):
+        """The second door on the Support section, and a page asking a user for a card
+        number, so it is held to the same rule as the first."""
+        self.assertTrue(Donation.PATREON_URL.startswith("https://www.patreon.com/"))
+
+    def test_given_the_monthly_link_when_reading_it_then_it_has_something_written_on_it(self):
+        self.assertTrue(Donation.PATREON_CALL_TO_ACTION.strip())
 
     def test_given_the_copy_when_reading_it_then_the_section_has_something_to_show(self):
         self.assertTrue(Donation.BLURB.strip())

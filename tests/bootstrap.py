@@ -4,6 +4,9 @@ from tests.application.service.DesktopIdentityTest import DesktopIdentityTest
 from tests.application.service.DonationTest import DonationTest
 from tests.application.service.FontProviderTest import FontProviderTest
 from tests.application.service.IconProviderTest import IconProviderTest
+from tests.application.service.OtherProjectTest import OtherProjectTest
+from tests.application.service.PaginationTest import PaginationTest
+from tests.application.service.ShortcutTest import ShortcutTest
 from tests.application.service.TaglineProviderTest import TaglineProviderTest
 from tests.application.service.TypographyTest import TypographyTest
 from tests.domain.entity.ThemeTest import ThemeTest
@@ -30,6 +33,9 @@ test_cases = [
     DonationTest,
     FontProviderTest,
     IconProviderTest,
+    OtherProjectTest,
+    PaginationTest,
+    ShortcutTest,
     TaglineProviderTest,
     TypographyTest,
     ThemeTest,

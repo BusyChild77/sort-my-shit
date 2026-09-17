@@ -7,10 +7,12 @@ from src.application.component.SMSButtonContainer import SMSButtonContainer
 from src.application.component.SMSFolderList import SMSFolderList
 from src.application.component.SMSInputWithLabel import SMSInputWithLabel
 from src.application.component.SMSLabel import SMSLabel
+from src.application.component.SMSPager import SMSPager
 from src.application.component.SMSScrollableFrame import SMSScrollableFrame
 from src.application.component.SMSSeparator import SMSSeparator
 from src.application.service.EventBridge import EventBridge
 from src.application.service.EventManager import EventManager
+from src.application.service.Pagination import Pagination
 from src.application.service.TaskRunner import TaskRunner
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.Typography import Typography
@@ -31,6 +33,7 @@ class SMSView(ABC, Frame):
     ROW_TOOLBAR = 4
     ROW_STATUS = 5
     ROW_BODY = 6
+    ROW_PAGER = 7
 
     STATUS_MAX_LENGTH = 150
     PADDING = 32
@@ -54,6 +57,10 @@ class SMSView(ABC, Frame):
         self.current_state = None
         self.body = None
         self.body_empty_message = None
+        self.pager = None
+        self.pagination = None
+        self.results = []
+        self.create_card = None
         self.folders = None
         self.folder_settings = {}
         self.folder_settings_repository = None
@@ -186,16 +193,24 @@ class SMSView(ABC, Frame):
         the window is too narrow to hold two without cutting their labels.
 
         create_sections is a list of callables taking the container and returning a section.
+
+        They are laid inside a scrolling area: a single column of sections is taller than
+        the window at its minimum height, and without one the last of them is simply cut
+        off with no way of reaching it.
         """
-        body = Frame(self, background=self.theme.background)
-        body.grid(row=self.ROW_BODY, column=0, sticky="new", pady=(22, 0))
-        body.columnconfigure(0, weight=1)
+        scroller = SMSScrollableFrame(self, self.theme)
+        scroller.grid(row=self.ROW_BODY, column=0, sticky="nsew", pady=(22, 0))
+
+        body = scroller.get_interior()
 
         self.sections = [create_section(body) for create_section in create_sections]
         self.sections_body = body
         self.section_columns = 0
 
-        self.bind("<Configure>", lambda event: self.__reflow_sections())
+        # Bound on the scrolled area and not on the view: it is its width, the scrollbar
+        # already taken out of it, that decides how many columns fit. add="+" so the
+        # frame keeps the handler holding its own scroll region.
+        body.bind("<Configure>", lambda event: self.__reflow_sections(), add="+")
         self.__reflow_sections()
 
         return body
@@ -213,34 +228,35 @@ class SMSView(ABC, Frame):
         self.subscribe("status", self.__change_current_state)
 
     def render_body(self, empty_message: str) -> SMSScrollableFrame:
-        """The result list, filling the room left below the toolbar. Until an action
-        fills it, it shows empty_message rather than a blank area."""
+        """The result list, filling the room left below the toolbar, with the pager
+        under it. Until an action fills it, it shows empty_message rather than a blank
+        area."""
         self.body_empty_message = empty_message
 
         self.body = SMSScrollableFrame(self, self.theme)
         self.body.grid(row=self.ROW_BODY, column=0, sticky="nsew")
+
+        self.pager = SMSPager(self, self.theme, on_change=self.__show_page)
+        self.pager.grid(row=self.ROW_PAGER, column=0, sticky="ew", pady=(12, 0))
 
         self.render_results([], None)
 
         return self.body
 
     def render_results(self, items: list, create_card):
-        """Replace the body with one card per item, or the empty message when there
-        is nothing to show. create_card takes an item and returns the card."""
-        self.body.reload()
+        """Show items as cards, one page of them at a time, or the empty message when
+        there is nothing to show. create_card takes an item and returns the card.
 
-        if not items:
-            SMSLabel(
-                container=self.body.get_interior(),
-                text=self.body_empty_message,
-                bg=self.theme.background,
-                fg=self.theme.muted,
-                font=Typography.SMALL,
-            ).grid(row=0, column=0, sticky="w", pady=14)
-            return
+        The whole list is kept, but only the page on screen is built: an analysis over a
+        big folder comes back with tens of thousands of results, and a card for every
+        one of them is minutes of widget building with the window frozen for all of it.
+        The pager below the body is what walks the rest -- see Pagination.
+        """
+        self.results = items
+        self.create_card = create_card
+        self.pagination = Pagination(len(items))
 
-        for row, item in enumerate(items):
-            create_card(item).grid(row=row, column=0, sticky="ew", pady=3)
+        self.__show_page()
 
     def subscribe(self, event_name: str, listener):
         """Subscribe for as long as the view lives, listeners are dropped on destroy.
@@ -260,6 +276,28 @@ class SMSView(ABC, Frame):
         self.subscriptions.clear()
 
         super().destroy()
+
+    def __show_page(self):
+        """Rebuild the body from the page the pagination is on. Called again on every
+        move, so it starts by emptying what the previous page left."""
+        self.body.reload()
+
+        if not self.results:
+            self.pager.grid_remove()
+            SMSLabel(
+                container=self.body.get_interior(),
+                text=self.body_empty_message,
+                bg=self.theme.background,
+                fg=self.theme.muted,
+                font=Typography.SMALL,
+            ).grid(row=0, column=0, sticky="w", pady=14)
+            return
+
+        for row, item in enumerate(self.pagination.page_of(self.results)):
+            self.create_card(item).grid(row=row, column=0, sticky="ew", pady=3)
+
+        self.pager.show(self.pagination)
+        self.pager.grid()
 
     def __cancel(self):
         self.task_runner.cancel()
@@ -307,7 +345,7 @@ class SMSView(ABC, Frame):
 
     def __section_columns_that_fit(self) -> int:
         widest_section = max(section.winfo_reqwidth() for section in self.sections)
-        available = self.winfo_width() - 2 * self.PADDING
+        available = self.sections_body.winfo_width()
 
         return 2 if available >= 2 * widest_section + self.SECTION_GUTTER else 1
 

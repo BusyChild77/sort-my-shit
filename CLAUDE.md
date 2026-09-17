@@ -37,7 +37,7 @@ src/application/     everything tkinter
   assets/            the icon, in the three formats the platforms want
   component/         reusable widgets, all prefixed SMS
   view/              one screen each, subclasses of SMSView
-  service/           EventManager, EventBridge, TaskRunner, ThemeProvider, IconProvider, Typography, SMSRenderer, UpdatePrompt
+  service/           EventManager, EventBridge, TaskRunner, ThemeProvider, IconProvider, Typography, Pagination, Shortcut, SMSRenderer, UpdatePrompt
 src/manager/         ViewManager
 tests/               mirrors src/, see tests/CLAUDE.md
 ```

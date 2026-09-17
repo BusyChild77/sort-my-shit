@@ -7,6 +7,7 @@ from src.application.component.SMSLink import SMSLink
 from src.application.component.SMSSection import SMSSection
 from src.application.service.Donation import Donation
 from src.application.service.EventManager import EventManager
+from src.application.service.OtherProject import OtherProject
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.Typography import Typography
 from src.application.service.UpdatePrompt import UpdatePrompt
@@ -35,7 +36,7 @@ class SettingsView(SMSView):
         self.settings_repository = settings_repository
         self.update_prompt = update_prompt
         self.update_state = None
-        self.donation_state = None
+        self.link_state = None
 
         super().__init__(container, theme_provider, event_manager)
 
@@ -158,24 +159,55 @@ class SettingsView(SMSView):
             on_failure=self.__hand_over_the_link,
         ).grid(row=1, column=0, sticky="w", pady=(10, 0))
 
-        self.donation_state = SMSLabel(
+        SMSLink(
             container=section.get_body(),
-            text=Donation.readable_url(),
+            theme=self.theme,
+            text=Donation.PATREON_CALL_TO_ACTION,
+            url=Donation.PATREON_URL,
+            on_failure=self.__hand_over_the_link,
+        ).grid(row=2, column=0, sticky="w", pady=(8, 0))
+
+        SMSLabel(
+            container=section.get_body(),
+            text=OtherProject.BLURB,
             bg=self.theme.background,
             fg=self.theme.muted,
             font=Typography.SMALL,
+            wraplength=self.BLURB_WRAP_LENGTH,
+        ).grid(row=3, column=0, sticky="w", pady=(18, 0))
+
+        SMSLink(
+            container=section.get_body(),
+            theme=self.theme,
+            text=OtherProject.NAME,
+            url=OtherProject.URL,
+            on_failure=self.__hand_over_the_link,
+        ).grid(row=4, column=0, sticky="w", pady=(8, 0))
+
+        self.link_state = SMSLabel(
+            container=section.get_body(),
+            text="",
+            bg=self.theme.background,
+            fg=self.theme.muted,
+            font=Typography.SMALL,
+            wraplength=self.BLURB_WRAP_LENGTH,
         )
-        self.donation_state.grid(row=2, column=0, sticky="w", pady=(6, 0))
+        # Gridded and taken straight back out: it has nothing to say until a link
+        # refuses to open, and an empty label still takes a line of the section.
+        self.link_state.grid(row=5, column=0, sticky="w", pady=(10, 0))
+        self.link_state.grid_remove()
 
         return section
 
     def __hand_over_the_link(self, url: str):
         """No browser opened, so the address goes to the clipboard rather than nowhere:
-        the line under the link is already showing it, and a user reading it has no way
-        of copying it out of a label."""
+        a user has no way of copying it out of a Tk label. It is the address that was
+        clicked, since the section holds three of them, and it is written out in full --
+        what is on the clipboard has to be what a user reading it can type back."""
         self.clipboard_clear()
         self.clipboard_append(url)
-        self.donation_state.set_text(f"Could not open a browser. Link copied: {Donation.readable_url()}")
+        self.link_state.set_text(f"Could not open a browser. Link copied: {url}")
+        self.link_state.grid()
 
     def __check_for_updates(self):
         self.update_prompt.check(self, announce=self.__announce_update)

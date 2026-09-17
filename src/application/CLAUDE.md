@@ -30,8 +30,8 @@ to `super().__init__`; Settings, Appearance and Console only draw, and leave it 
 - `render_status()` — the one line state, fed by the `status` event
 - `render_body(empty_message)` — the scrollable result list, showing `empty_message`
   until an action fills it
-- `render_results(items, create_card)` — replaces the body with one card per item, or the
-  empty message when there is nothing to show
+- `render_results(items, create_card)` — shows the items as cards, one page at a time,
+  or the empty message when there is nothing to show
 - `render_sections([create_section, …])` — setting sections laid side by side, collapsing
   to a single column when the window is too narrow
 - `run_in_background(work, done)` — runs a scan or a removal in a worker and calls `done`
@@ -58,6 +58,19 @@ anywhere else will go stale.
 
 Long running work is triggered from a view but **lives in a domain service**. A view that
 walks folders or moves files itself is in the wrong layer.
+
+### Results are paged, never drawn all at once
+
+A card is a handful of widgets, and an analysis over a real folder comes back with tens of
+thousands of results: building one card each is a minute of widget creation on the only
+thread Tk has, with the window frozen for all of it. `render_results` therefore keeps the
+whole list and builds **only the page on screen** — `Pagination` does the arithmetic and
+holds no widget, so it is unit tested without a window, and `SMSPager` under the body draws
+the two buttons and the range. Showing a result costs the same whether the scan found forty
+files or forty thousand.
+
+A screen that grids its own widget into `ROW_BODY` instead of calling `render_body` — the
+Console does — has no pager, which is right: it has no list of results to page through.
 
 ### Actions run in a worker
 
@@ -88,8 +101,12 @@ component that hardcodes a `width=` in pixels breaks that.
 
 `render_sections` goes further and re-flows on `<Configure>`: it measures the widest
 section and drops to a single column when two would no longer fit, rather than cutting
-labels off. `SMSRenderer.WINDOW_MINIMUM_WIDTH` / `WINDOW_MINIMUM_HEIGHT` set the floor
-below which the window cannot be dragged; check a change still holds up at that size.
+labels off. It measures the **scrolled area**, not the view, since the scrollbar is part
+of what a column no longer has. Its sections sit in an `SMSScrollableFrame` for the same
+reason the results do: one column of them is taller than the window at its minimum height,
+and a section that does not fit has to be reachable rather than cut off.
+`SMSRenderer.WINDOW_MINIMUM_WIDTH` / `WINDOW_MINIMUM_HEIGHT` set the floor below which the
+window cannot be dragged; check a change still holds up at that size.
 
 Where a long path sits next to a badge or a button, the neighbour carries a `padx` gutter:
 Tk does not clip a label to its grid cell, so the text runs underneath whatever follows it
@@ -159,10 +176,17 @@ button GitHub puts on the repository, so **the two are held together by `Donatio
 nothing breaks when they drift, the users who click one of them simply land on somebody
 else's page.
 
-`SMSLink` is what opens it. There is no browser to open on every machine, so a refusal is
-handed back to the view rather than swallowed, and the Settings screen puts the address
-on the clipboard instead — the link is the whole point of the widget, and a user has no
-way of copying a Tk label.
+`Donation.PATREON_URL` is the second door, for a user who would rather give monthly than
+once, and `OtherProject` is the author's other site, mentioned under both. All three read
+the same: a line of copy, then the address on its own line as an `SMSLink` in the body
+font. A link set apart from the others is one a user reads as something else.
+
+`SMSLink` is what opens all three. There is no browser to open on every machine, so a
+refusal is handed back to the view rather than swallowed, and the Settings screen puts the
+address on the clipboard instead — the link is the whole point of the widget, and a user
+has no way of copying a Tk label. The address that was clicked is the one that goes on the
+clipboard, written out in full on the one line the section keeps for it, which stays out
+of the layout until there is something to say.
 
 ## Updating (`service/UpdatePrompt.py`)
 
@@ -188,4 +212,12 @@ the packaging has to repeat.
 
 Owns the window chrome: side bar, menu, keyboard shortcuts, and which view is visible.
 Adding a screen means adding it to `SortMyShit.views` and to `SMSRenderer.NAVIGATION`,
-where the tuple is `(view_name, label, keyboard shortcut)`.
+where the tuple is `(view_name, label, shortcut letter)`. The first `ACTION_ENTRIES` of
+them are what the Actions menu lists, the rest what the File menu holds.
+
+**A shortcut is a letter held with Alt**, and both the binding and the label written beside
+it come from `Shortcut` so the two cannot drift. They were bare letters once, bound on the
+window: a folder is typed as often as it is browsed, and pressing S inside a folder field
+sent the event up to the window and changed the screen mid-path. Tk's own `Entry` bindings
+drop an Alt keypress instead of inserting it, so a shortcut now reaches the window and
+nothing else. A new binding on the window has to carry a modifier for the same reason.

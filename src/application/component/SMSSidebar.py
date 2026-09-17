@@ -2,6 +2,7 @@ from tkinter import Frame, Label, PhotoImage
 from typing import Callable
 
 from src.application.component.SMSLabel import SMSLabel
+from src.application.service.Shortcut import Shortcut
 from src.application.service.Typography import Typography
 from src.domain.entity.Theme import Theme
 
@@ -93,7 +94,7 @@ class SMSSidebar(Frame):
 
         entry.shortcut = SMSLabel(
             container=entry,
-            text=shortcut,
+            text=Shortcut.label(shortcut),
             bg=self.theme.surface,
             fg=self.theme.muted,
             font=Typography.SMALL,

@@ -4,6 +4,7 @@ from src.application.component.SMSSidebar import SMSSidebar
 from src.application.service.EventManager import EventManager
 from src.application.service.FontProvider import FontProvider
 from src.application.service.IconProvider import IconProvider
+from src.application.service.Shortcut import Shortcut
 from src.application.service.TaglineProvider import TaglineProvider
 from src.application.service.ThemeProvider import ThemeProvider
 from src.application.service.UpdatePrompt import UpdatePrompt
@@ -21,6 +22,11 @@ class SMSRenderer:
     # side bar takes its width out of the window, so it is counted in here.
     WINDOW_MINIMUM_WIDTH = 1150
     WINDOW_MINIMUM_HEIGHT = 640
+
+    # (view name, label, shortcut letter). The letter is pressed with Alt -- see
+    # Shortcut -- and the first ACTION_ENTRIES of these are the ones the Actions menu
+    # lists, the rest being the preferences the File menu holds.
+    ACTION_ENTRIES = 5
 
     NAVIGATION = [
         ("sort_files", "Sort files", "S"),
@@ -127,27 +133,35 @@ class SMSRenderer:
         menu = Menu(self.root, background=theme.surface, foreground=theme.text, borderwidth=0)
 
         file_menu = Menu(menu, tearoff=0, background=theme.surface, foreground=theme.text)
-        file_menu.add_command(label="Settings (P)", command=lambda: self.change_view("settings"))
-        file_menu.add_command(label="Appearance (A)", command=lambda: self.change_view("appearance"))
+        self.__add_navigation(file_menu, self.NAVIGATION[self.ACTION_ENTRIES:])
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.destroy)
 
         actions_menu = Menu(menu, tearoff=0, background=theme.surface, foreground=theme.text)
-        for view_name, label, shortcut in self.NAVIGATION[:5]:
-            actions_menu.add_command(
-                label=f"{label} ({shortcut})",
-                command=lambda view_name=view_name: self.change_view(view_name),
-            )
+        self.__add_navigation(actions_menu, self.NAVIGATION[:self.ACTION_ENTRIES])
 
         menu.add_cascade(label="File", menu=file_menu)
         menu.add_cascade(label="Actions", menu=actions_menu)
 
         return menu
 
+    def __add_navigation(self, menu: Menu, entries: list):
+        """The shortcut is written as an accelerator rather than into the label: the
+        binding is Tk's to draw, and the menu stays readable when it changes."""
+        for view_name, label, shortcut in entries:
+            menu.add_command(
+                label=label,
+                accelerator=Shortcut.label(shortcut),
+                command=lambda view_name=view_name: self.change_view(view_name),
+            )
+
     def __bind_shortcuts(self):
+        """Bound on the window, so a screen is one keystroke away wherever the focus is
+        -- which is why they are held with Alt: a bare letter reaching the window from
+        the folder field changed the screen while a path was being typed."""
         for view_name, label, shortcut in self.NAVIGATION:
             self.root.bind(
-                f"<KeyPress-{shortcut.lower()}>",
+                Shortcut.sequence(shortcut),
                 lambda event, view_name=view_name: self.change_view(view_name),
             )
 

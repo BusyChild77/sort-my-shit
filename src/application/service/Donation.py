@@ -10,14 +10,14 @@ class Donation:
     HANDLE = "busychild77"
     URL = f"https://www.buymeacoffee.com/{HANDLE}"
 
+    # The second door, for a user who would rather chip in every month than once. It is
+    # not the handle above: Patreon is its own account with its own name, and nothing
+    # outside this class knows either of them.
+    PATREON_URL = "https://www.patreon.com/c/BusyChild77"
+    PATREON_CALL_TO_ACTION = "Patreon Page"
+
     CALL_TO_ACTION = "Buy me a coffee"
     BLURB = (
         "SortMyShit is free, has no ads and asks for nothing. If it saved you an "
         "afternoon of dragging files around, you can buy me a coffee."
     )
-
-    @classmethod
-    def readable_url(cls) -> str:
-        """The address as it is written under the link, without the parts nobody reads
-        -- and the one thing left to a user whose browser refuses to open."""
-        return cls.URL.split("://", 1)[1].removeprefix("www.")
