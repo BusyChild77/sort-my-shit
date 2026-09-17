@@ -45,13 +45,19 @@ class AppearanceView(SMSView):
             direction="horizontal",
             columns=self.PRESETS_PER_ROW,
         )
+
+        # Every button as wide as the longest name rather than as wide as its own. They
+        # wrap onto a second line, and a ragged grid of them reads as a mistake -- they
+        # are one set of swatches, and nothing about a palette makes its button narrower.
+        width = max(len(preset_name) for preset_name in Theme.PRESETS) + 2
+
         presets.set_buttons([
             SMSButton(
                 container=presets,
                 theme=self.theme,
                 text=preset_name,
                 variant="primary" if self.__is_current_preset(preset_name) else "ghost",
-                width=len(preset_name) + 2,
+                width=width,
                 command=lambda preset_name=preset_name: self.theme_provider.apply_preset(preset_name),
             )
             for preset_name in Theme.PRESETS
