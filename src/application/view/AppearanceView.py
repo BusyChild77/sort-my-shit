@@ -11,6 +11,11 @@ from src.domain.entity.Theme import Theme
 class AppearanceView(SMSView):
     """Palette editor. Every change is saved and applied to the whole interface at once."""
 
+    # A row of presets grows with every palette added, and past the width of the window
+    # it is cut off rather than wrapped. Four to a line keeps it inside the narrowest
+    # the window goes, and keeps the section narrow enough to sit beside the colors.
+    PRESETS_PER_ROW = 4
+
     def __init__(
         self,
         container,
@@ -34,7 +39,12 @@ class AppearanceView(SMSView):
     def __create_presets_section(self, container) -> SMSSection:
         section = SMSSection(container, self.theme, "Presets")
 
-        presets = SMSButtonContainer(container=section.get_body(), theme=self.theme, direction="horizontal")
+        presets = SMSButtonContainer(
+            container=section.get_body(),
+            theme=self.theme,
+            direction="horizontal",
+            columns=self.PRESETS_PER_ROW,
+        )
         presets.set_buttons([
             SMSButton(
                 container=presets,

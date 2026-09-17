@@ -42,6 +42,29 @@ class Theme:
             "accent": "#2F6FEB",
             "text": "#1B1F24",
         },
+        # The accent is the gold the icon is drawn in, read out of the artwork itself:
+        # the one preset wearing the application's own colors.
+        "Poo": {
+            "background": "#17100A",
+            "surface": "#241A10",
+            "elevated": "#332517",
+            "accent": "#E6B325",
+            "text": "#EDE0CE",
+        },
+        "Terracotta": {
+            "background": "#F5EDE6",
+            "surface": "#EADFD4",
+            "elevated": "#FDF8F3",
+            "accent": "#B4512F",
+            "text": "#24150F",
+        },
+        "Sunrise": {
+            "background": "#1B1024",
+            "surface": "#2A1833",
+            "elevated": "#3C2445",
+            "accent": "#FF8A5B",
+            "text": "#F2DCE4",
+        },
     }
 
     DEFAULT_PRESET = "Midnight"
