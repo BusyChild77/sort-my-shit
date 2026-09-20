@@ -1,6 +1,6 @@
 # Application layer
 
-Everything tkinter. The only layer allowed to import it.
+Covers `src/application/`. Everything tkinter, and the only layer allowed to import it.
 
 ## Components (`component/`)
 
@@ -151,7 +151,7 @@ Resolves the window icon and caches the `PhotoImage`, because Tk keeps no refere
 its own and drops an icon that gets garbage collected. `SMSRenderer` applies it with
 `iconphoto(True, ...)` so the dialogs the views open carry it as well. The lookup goes
 through the sources and through the PyInstaller bundle, never through the current working
-directory — see the packaging section of the root `CLAUDE.md`.
+directory — see [icon-and-packaging.md](icon-and-packaging.md).
 
 `logo()` hands back the same artwork at `LOGO_SIZE`, for the side bar wordmark. Tk only
 shrinks an image by keeping one pixel out of every n, so the artwork stays a square whose
@@ -205,8 +205,8 @@ so it stays silent unless there is something to install.
 
 Builds the root window, because the class name the desktop matches the launcher on can
 only be given to Tk as the window is created. It sets the title too, which is why
-`SMSRenderer` does not. See the desktop identity section of the root `CLAUDE.md` for what
-the packaging has to repeat.
+`SMSRenderer` does not. See [desktop-identity.md](desktop-identity.md) for what the
+packaging has to repeat.
 
 ## Rendering (`service/SMSRenderer.py`)
 

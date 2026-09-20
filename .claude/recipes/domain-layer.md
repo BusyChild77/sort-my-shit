@@ -1,6 +1,7 @@
 # Domain layer
 
-The business logic, and the only layer with no dependency on anything else in the project.
+Covers `src/domain/`. The business logic, and the only layer with no dependency on
+anything else in the project.
 
 ## Rules
 

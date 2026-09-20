@@ -1,6 +1,7 @@
 # Infrastructure layer
 
-Where the outside world is allowed in: the filesystem, `settings.json`, the log file.
+Covers `src/infrastructure/`. Where the outside world is allowed in: the filesystem,
+`settings.json`, the log file.
 
 ## Rules
 
@@ -29,7 +30,7 @@ Where the outside world is allowed in: the filesystem, `settings.json`, the log 
   once it is in the list.
 - `SettingsRepository` — `settings.json` next to the executable. `fetch_all` fills in
   missing keys from `Settings.default_user_settings` and migrates settings written by
-  older versions; see the Settings section of the root `CLAUDE.md` before renaming one.
+  older versions; see [settings.md](settings.md) before renaming one.
 - `TmpStorageRepository` — in memory hand off between a view's "analyse" and "run" steps.
   Not persistence, do not make it one.
 - `GitHubReleaseRepository` — the releases feed and the download. **Every failure returns

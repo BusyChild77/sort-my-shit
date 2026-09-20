@@ -1,6 +1,7 @@
-# Tests
+# Testing
 
-`unittest`, run by CI as `python3 -m unittest --failfast --verbose ./tests/bootstrap.py`.
+Covers `tests/`. `unittest`, no external runner, run by CI as
+`python3 -m unittest --failfast --verbose ./tests/bootstrap.py`.
 
 ## Coverage expectation
 
@@ -21,7 +22,8 @@ with the tests that prove it, in the same commit. The critical features are:
 - **cancelling** — that a cancelled run touches nothing after the file it was on;
 - **duplicate detection** — binary and filename comparison, and the large file rules;
 - **settings** — persistence, defaults for a missing key, and the migration of settings
-  written by an older version. A user must never lose their configuration on upgrade;
+  written by an older version, and where they are written from for each packaged form of
+  the app. A user must never lose their configuration on upgrade;
 - **updating** — it replaces the running application, so: which asset each platform
   installs, that macOS is handed over rather than overwritten, that an unreachable GitHub
   never reads as up to date, and that a run from the sources or an unstamped build never

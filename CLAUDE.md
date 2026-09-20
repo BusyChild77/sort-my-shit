@@ -39,7 +39,8 @@ src/application/     everything tkinter
   view/              one screen each, subclasses of SMSView
   service/           EventManager, EventBridge, TaskRunner, ThemeProvider, IconProvider, Typography, Pagination, Shortcut, SMSRenderer, UpdatePrompt
 src/manager/         ViewManager
-tests/               mirrors src/, see tests/CLAUDE.md
+tests/               mirrors src/, one <ClassName>Test.py per class
+.claude/recipes/     the detail behind each area, read on demand — see below
 ```
 
 Layer rules, in order of importance:
@@ -68,166 +69,20 @@ Layer rules, in order of importance:
 - flake8 with `--max-line-length=160`; keep functions under a complexity of 10.
 - Commits follow conventional commits: `type(scope): description`.
 
-## Fonts
+## Recipes
 
-Every family is picked once by `Typography.resolve_families`, from the first name in a
-preferred list that Tk reports as installed. Body text takes `PREFERRED_FAMILIES`, the
-console `PREFERRED_MONO_FAMILIES`, and the **titles** — the side bar wordmark and every
-screen's heading, both `Typography.TITLE` — take `PREFERRED_TITLE_FAMILIES`. Views and
-components never name a family: they take `Typography.TITLE`, `BODY`, `MONO`, so a change
-here reaches every screen.
+The detail lives in `.claude/recipes/`, one file per area. This file is the whole of what
+always applies; **read the recipe for the area you are about to touch** before changing it.
 
-The titles are the one face the app ships: `assets/title-font.otf`, at the head of that
-list.
-Tk offers no way to load a font from a file, so `FontProvider` hands it to the platform's
-own font manager first — for this process only, nothing is installed on the machine — and
-`SMSRenderer` calls it **before** `Typography.resolve_families` reads the family list.
-Registration is allowed to fail: the rest of the list is then what the titles are set in,
-a monospace, Consolas where there is one, so no screen is left without a title. The font
-is in `datas`, and **a font file swapped for another has to have `FontProvider.FAMILIES`
-swapped with it** — the names in the file are what Tk is asked for, and
-`FontProviderTest` reads them back out of the file to prove the two still agree.
-
-**That face draws capitals and nothing else**, which is why every heading goes through
-`Typography.in_title_case` — the side bar wordmark included — rather than being written
-in capitals in the copy. A letter the font does not draw is silently set in whatever the
-platform substitutes, in the middle of a heading, so `FontProviderTest` checks the
-screens' own titles against the characters in the file. There is no bold in it either,
-so Tk emboldens the titles itself.
-
-`FAMILIES` is a list because a file can carry more than one name: a weight that is
-neither regular nor bold is folded into the family name by Windows while fontconfig and
-CoreText report the typographic family, and both then have to be asked for.
-
-## Desktop identity
-
-A window carries two names. `DesktopIdentity.NAME` — "Sort My Shit" — is the one the user
-reads, in the title bar and under the icon. `DesktopIdentity.APPLICATION` is the one the
-desktop matches against the launcher the app was started from, and it is the reason the
-window is built in `DesktopIdentity.window()` rather than in `Main`: a class name can only
-be handed to Tk as the window is created, and left alone Tk uses `Tk`, which matches no
-launcher and puts the window on the dock under a second icon labelled "Tk".
-
-**Tk title cases the class name it is given**, so what ends up in `WM_CLASS` is
-`DesktopIdentity.window_class()` and not `APPLICATION` itself. That is the string
-`StartupWMClass` carries in `packaging/SortMyShit.desktop`, and the two only meet on an
-exact match. macOS reads the bundle rather than the window, so `NAME` is repeated as
-`CFBundleName` / `CFBundleDisplayName` in `SortMyShit.spec`. **All three are held together
-by `DesktopIdentityTest`** — nothing fails loudly when they drift, the app simply appears
-twice on the dock. Windows is left to group by the executable itself: an explicit
-AppUserModelID with no installed shortcut carrying the same one would split the window
-from a pinned launcher, which is the bug being fixed here.
-
-## Icon and packaging
-
-The icon lives in `src/application/assets/` in three formats, all the same artwork: the
-poop as one flat gold shape — no face, no shading, no outline, no background — so it
-reads at 16 pixels and sits on any desktop without carrying a tile of its own.
-`icon.png` is the one the running app shows, and the only one shipped inside the
-executable; `icon.ico` and `icon.icns` are build inputs, read by PyInstaller when it
-stamps the Windows executable and the macOS bundle.
-
-`IconProvider` is the only place that knows where that file is. It never uses the current
-working directory — the app is launched from anywhere — and it looks inside the folder
-PyInstaller unpacks the bundle into when the app is compiled. **A new asset read at
-runtime has to be added to `datas` in `SortMyShit.spec`**, or it will be missing from
-every packaged build while still working from the sources.
-
-`SortMyShit.spec` is the single build recipe, run both by `compile.sh` and by
-`.github/workflows/release.yml`, so a local build and a released one are the same thing.
-Pushing to `main` bumps the patch version, builds the AppImage, the Windows executable and
-the macOS disk image, publishes the GitHub release and mirrors it to SourceForge.
-
-## Updating
-
-The app knows its own version through `Version.CURRENT`, which stays at `0.0.0` in the
-sources and is stamped by the release workflow before PyInstaller runs. **That stamp is
-what makes the updater work at all**: an unstamped build is behind every release, so
-`CheckForUpdate` refuses to look rather than offering an update forever. A run from the
-sources is refused for the same reason — there is no file to replace.
-
-`CheckForUpdate.look()` returns one of four outcomes rather than a release or nothing:
-`UNREACHABLE` must never be shown as `UP_TO_DATE`, or a machine with no network would be
-told it is current. `ApplyUpdate` then downloads the asset whose name matches this
-platform and hands it to `InstallationRepository`, which swaps the AppImage or the .exe
-in place. **macOS is deliberately never overwritten**: the bundle is unsigned, so a copy
-replaced behind Gatekeeper's back is quarantined and refuses to open, and the disk image
-is only revealed to the user instead.
-
-The network call and the download run on a worker thread — `UpdatePrompt` marshals every
-widget touch back through `widget.after()`, because Tk is single threaded.
-
-## Folders that are not local
-
-All four actions work on whatever the operating system presents as a path, so a folder is
-supported exactly as far as it is mounted: a cloud drive's sync folder (pCloud, Google
-Drive, Dropbox, rclone), a mounted share or a mapped drive letter, `/mnt/c` under WSL, a
-VirtualBox or VMware share. There is no protocol code and no cloud API anywhere — adding
-one would be a new repository, and the sync folder already covers the case.
-
-Three things follow from that, and each is load bearing:
-
-- **A folder can be typed, not only browsed.** The platform dialog only shows what it
-  already knows about, which leaves out a UNC share, a path under `\\wsl$`, and any mount
-  point it will not descend into. `SMSFolderList` therefore has a field beside its browse
-  button, and nothing typed into it is checked against the disk: a share that is offline
-  right now is still the folder the user means.
-- **A folder that did not answer is never reported as an empty one.** See the domain
-  `CLAUDE.md`: `CheckFolder` runs before every walk, and `FileSystemRepository.probe_folder`
-  gives the stat a deadline because a dead mount blocks rather than failing.
-- **Every action runs in a worker, with a Cancel button.** See the application
-  `CLAUDE.md`. A scan over a share is minutes, and Tk stops painting for all of it
-  otherwise.
-
-Two gaps are known and deliberate. A share that is unmounted but whose mount point still
-exists locally reads as a readable empty folder, which no probe can tell apart without
-reading the mount table. And a duplicate scan still compares every pair of files by
-reading both whole, which is the expensive thing to do over a network; grouping by size
-and digest first is the fix, and it is not done yet.
-
-## Settings
-
-`settings.json` sits next to the executable and is read through `SettingsRepository`.
-**Where "next to the executable" is** is `RunDirectory`'s decision, not
-`SettingsRepository`'s: an AppImage runs from a read only mount and a macOS .app hides
-its binary under `Contents/MacOS`, so the folder holding what the user actually launched
-is resolved there, and falls back to the platform configuration folder when it cannot be
-written to. Anything that packages the app in a new way is covered by
-`RunDirectoryTest`.
-Defaults live in `src/domain/entity/Settings.py`; anything missing from the file falls
-back to them, so adding a setting is a one line change there.
-
-The **folder** settings are edited on the screen that uses them, through
-`SMSView.render_folders`. The Settings screen holds the options that change *how* an
-action behaves, and no folder at all.
-
-Settings written by older versions are migrated on read (`SettingsRepository.__migrate`):
-`folder_to_process` became the `source_folders` list, `remove_duplicates_folder` became
-the `remove_duplicates_folders` list, and the flat `color1`..`color4` became the `theme`
-object. A setting listed in `Settings.folder_list_user_settings` is coerced from the
-single string it used to be, so reshaping a folder setting into a list means adding it
-there as well as to `renamed_user_settings`. **When you rename or reshape a setting, add it to
-`renamed_user_settings` and cover it in `SettingsRepositoryTest`** — users must never
-lose their configuration on upgrade.
-
-## Testing
-
-`unittest`, no external runner. Every test case must be imported and listed in
-`tests/bootstrap.py`, which is what CI executes.
-
-**Test coverage must always cover all critical features.** A change to any of them lands
-with the tests that prove it, in the same commit:
-
-- sorting: which file goes where, flatten vs. preserved tree, several source folders,
-  name collisions, copy vs. move, deletion of emptied source folders;
-- every operation that **deletes or moves user data** — duplicate removal, empty file and
-  empty folder removal — including the cases where nothing should be touched;
-- duplicate detection, binary and filename comparison alike;
-- settings persistence and the migration of settings written by older versions,
-  including where they are written from for each packaged form of the app;
-- the updater: which asset each platform installs, that macOS is never overwritten, and
-  that an unreachable GitHub is never reported as up to date.
-
-Domain services are tested against mocked repository *interfaces* and never touch the
-disk. Repository implementations get their own tests using a temporary folder under
-`tests/`, created and removed by `setUp`/`tearDown`.
+| Read this | Before |
+| --- | --- |
+| [domain-layer.md](.claude/recipes/domain-layer.md) | touching `src/domain/` — sorting, duplicate detection, removal, cancelling, progress reporting, and why a folder that did not answer is never an empty one |
+| [application-layer.md](.claude/recipes/application-layer.md) | touching `src/application/` — views, components, the worker every action runs in, paging, theming, the side bar and the window chrome |
+| [infrastructure-layer.md](.claude/recipes/infrastructure-layer.md) | touching `src/infrastructure/` — what each repository is allowed to do, and `RunDirectory` |
+| [testing.md](.claude/recipes/testing.md) | writing or changing a test — the coverage that is not negotiable, the naming, and `tests/bootstrap.py` |
+| [settings.md](.claude/recipes/settings.md) | adding, renaming or reshaping a setting — migration is what keeps users from losing their configuration |
+| [non-local-folders.md](.claude/recipes/non-local-folders.md) | anything to do with cloud drives, network shares, mapped drives or WSL paths |
+| [updating.md](.claude/recipes/updating.md) | touching the updater — what each platform installs, and why macOS is never overwritten |
+| [icon-and-packaging.md](.claude/recipes/icon-and-packaging.md) | adding an asset read at runtime, or changing `SortMyShit.spec` / the release workflow |
+| [desktop-identity.md](.claude/recipes/desktop-identity.md) | changing the window title, the class name, the `.desktop` file or the bundle names |
+| [fonts.md](.claude/recipes/fonts.md) | swapping the title font, or adding a heading — the face draws capitals and nothing else |
