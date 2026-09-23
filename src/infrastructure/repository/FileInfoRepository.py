@@ -1,5 +1,6 @@
 from os import path as os_path, walk as os_walk, remove as os_remove
 from glob import glob
+from hashlib import blake2b
 
 from src.domain.entity.FileInfo import FileInfo
 from src.domain.repository.FileInfoRepositoryInterface import FileInfoRepositoryInterface
@@ -9,6 +10,7 @@ from src.application.service.EventManager import EventManager
 
 class FileInfoRepository(FileInfoRepositoryInterface):
     PARTIAL_CONTENTS_LENGTH = 128
+    DIGEST_CHUNK_LENGTH = 1024 * 1024
 
     def __init__(
         self,
@@ -54,6 +56,18 @@ class FileInfoRepository(FileInfoRepositoryInterface):
             partial_contents=file_partial_contents,
             contents=file_contents,
         )
+
+    def fetch_digest(self, full_path: str) -> str:
+        """Read in chunks, so a file of any size costs one chunk of memory rather than
+        its whole length. A read that fails raises: the caller decides what an unreadable
+        file means."""
+        digest = blake2b()
+
+        with open(full_path, "rb") as file_opened:
+            for chunk in iter(lambda: file_opened.read(self.DIGEST_CHUNK_LENGTH), b""):
+                digest.update(chunk)
+
+        return digest.hexdigest()
 
     def remove_one(self, file_path: str):
         os_remove(file_path)

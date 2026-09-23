@@ -8,27 +8,31 @@ from src.domain.event.EventManagerInterface import EventManagerInterface
 
 class FileNameComparatorTest(TestCase):
     def setUp(self):
-        self.file1_path = "/tests/domain/service/CompareFileNameTest/testFile1.txt"
-        self.file2_path = "/tests/domain/service/CompareFileNameTest/subfolder/testFile1.txt"
-
         self.file_name_comparator = CompareFileName(
             Mock(EventManagerInterface)
         )
 
         super().setUp()
 
-    def test_given_two_different_file_names_in_different_folders_when_comparing_then_returns_true(self):
-        self.assertTrue(
-            self.file_name_comparator.compare(
-                FileInfo(self.file1_path, "", 500, ""),
-                FileInfo(self.file2_path, "", 500, ""),
-            )
-        )
+    def test_given_two_files_with_the_same_name_in_different_folders_when_grouping_then_they_are_grouped_together(self):
+        file1 = FileInfo("/tests/testFile1.txt", "testFile1.txt", 500, "")
+        file2 = FileInfo("/tests/subfolder/testFile1.txt", "testFile1.txt", 500, "")
 
-    def test_given_twice_the_same_file_when_comparing_then_returns_false(self):
-        self.assertFalse(
-            self.file_name_comparator.compare(
-                FileInfo(self.file1_path, "", 500, ""),
-                FileInfo(self.file1_path, "", 500, ""),
-            )
+        self.assertEqual(self.file_name_comparator.group([file1, file2]), [[file1, file2]])
+
+    def test_given_two_files_with_different_names_when_grouping_then_they_are_not_grouped(self):
+        file1 = FileInfo("/tests/testFile1.txt", "testFile1.txt", 500, "")
+        file2 = FileInfo("/tests/testFile2.txt", "testFile2.txt", 500, "")
+
+        self.assertEqual(self.file_name_comparator.group([file1, file2]), [])
+
+    def test_given_several_names_shared_when_grouping_then_one_group_per_name_in_the_order_listed(self):
+        files = [
+            FileInfo(f"/{folder}/{name}", name, 500, "")
+            for name in ("a.txt", "b.txt", "c.txt") for folder in ("one", "two")
+        ]
+
+        self.assertEqual(
+            self.file_name_comparator.group(files),
+            [files[0:2], files[2:4], files[4:6]],
         )

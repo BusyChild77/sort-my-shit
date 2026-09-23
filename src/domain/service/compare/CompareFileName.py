@@ -9,13 +9,14 @@ class CompareFileName:
     ):
         self.event_manager = event_manager
 
-    def compare(self, file1: FileInfo, file2: FileInfo) -> bool:
-        self.event_manager.trigger(
-            "status",
-            f"Comparing {file2.full_path} with {file1.full_path}"
-        )
+    def group(self, files: list[FileInfo]) -> list[list[FileInfo]]:
+        """The files sharing a name, in groups of two or more, each in the order it was
+        listed."""
+        self.event_manager.trigger("status", "Comparing file names")
 
-        if file2.file_name == file1.file_name and file2.full_path != file1.full_path:
-            return True
+        groups = {}
 
-        return False
+        for file in files:
+            groups.setdefault(file.file_name, []).append(file)
+
+        return [group for group in groups.values() if len(group) > 1]

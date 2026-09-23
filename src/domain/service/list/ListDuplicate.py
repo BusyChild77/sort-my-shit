@@ -37,33 +37,25 @@ class ListDuplicate:
             self.settings_repository.fetch_one("remove_duplicates_folders")
         )
 
-        duplicate_matches = []
+        all_files = self.__fetch_all_files(folders)
 
-        all_files = []
-
-        # Every folder into one list, so a file in one folder is matched against a copy
-        # of itself sitting in another.
-        for folder in folders:
-            all_files += self.file_info_repository.fetch_all_from_folder(folder)
+        if self.cancellation.is_cancelled():
+            self.event_manager.trigger("status", "Analysis cancelled")
+            return []
 
         self.event_manager.trigger("status", "Processing files")
 
-        file: FileInfo
-        for file in all_files:
-            if self.cancellation.is_cancelled():
-                self.event_manager.trigger("status", "Analysis cancelled")
-                return duplicate_matches
+        if self.settings_repository.fetch_one("binary_search") is True:
+            groups = self.binary_comparator.group(all_files)
+        else:
+            groups = self.file_name_comparator.group(all_files)
 
-            if not os_path.isfile(file.full_path):
-                continue
+        # The first one listed is kept, the others are the duplicates of it.
+        duplicate_matches = [DuplicateMatch(group[1:], group[0]) for group in groups]
 
-            if self.settings_repository.fetch_one("binary_search") is True:
-                duplicate_match = self.__list_files_by_identical_binary_content(all_files, file)
-            else:
-                duplicate_match = self.__list_files_by_identical_file_name(all_files, file)
-
-            if duplicate_match is not None:
-                duplicate_matches.append(duplicate_match)
+        if self.cancellation.is_cancelled():
+            self.event_manager.trigger("status", "Analysis cancelled")
+            return duplicate_matches
 
         self.event_manager.trigger(
             "status",
@@ -72,64 +64,22 @@ class ListDuplicate:
 
         return duplicate_matches
 
-    def __list_files_by_identical_binary_content(
-        self,
-        all_files: list[FileInfo],
-        duplicate_of: FileInfo,
-    ) -> DuplicateMatch:
-        file: FileInfo
+    def __fetch_all_files(self, folders: list[str]) -> list[FileInfo]:
+        """Every folder into one list, so a file in one folder is matched against a copy
+        of itself sitting in another. A folder picked along with one inside it lists the
+        same file twice, and a file must never be offered up as a duplicate of itself:
+        removing it would delete the only copy."""
+        all_files = []
+        seen_paths = set()
 
-        files = []
+        for folder in folders:
+            for file in self.file_info_repository.fetch_all_from_folder(folder):
+                full_path = os_path.normpath(file.full_path)
 
-        for file in all_files:
-            # Checked in here too: one pass over the list is a comparison per file, and
-            # a binary one reads both of them whole. On a share that is minutes.
-            if self.cancellation.is_cancelled():
-                return None
+                if full_path in seen_paths or not os_path.isfile(file.full_path):
+                    continue
 
-            if not os_path.isfile(file.full_path):
-                continue
+                seen_paths.add(full_path)
+                all_files.append(file)
 
-            if self.binary_comparator.compare(file, duplicate_of) is True:
-                files.append(file)
-
-        if len(files) == 0:
-            return None
-
-        self.__remove_found_duplicates_from_all_files_list(all_files, files, duplicate_of)
-        return DuplicateMatch(files, duplicate_of)
-
-    def __list_files_by_identical_file_name(
-        self,
-        all_files: list[FileInfo],
-        duplicate_of: FileInfo,
-    ) -> DuplicateMatch:
-        file: FileInfo
-
-        files = []
-
-        for file in all_files:
-            if self.cancellation.is_cancelled():
-                return None
-
-            if not os_path.isfile(file.full_path):
-                continue
-
-            if self.file_name_comparator.compare(file, duplicate_of) is True:
-                files.append(file)
-
-        if len(files) == 0:
-            return None
-
-        self.__remove_found_duplicates_from_all_files_list(all_files, files, duplicate_of)
-        return DuplicateMatch(files, duplicate_of)
-
-    def __remove_found_duplicates_from_all_files_list(
-            self,
-            all_files: list[FileInfo],
-            files: list[FileInfo],
-            duplicate_of: FileInfo):
-        for file in files:
-            del all_files[all_files.index(file)]
-
-        del all_files[all_files.index(duplicate_of)]
+        return all_files

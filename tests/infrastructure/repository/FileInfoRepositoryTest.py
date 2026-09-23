@@ -72,6 +72,31 @@ class FileInfoRepositoryTest(TestCase):
         self.assertEqual([file.file_name for file in files], ["empty.txt"])
         self.assertEqual(files[0].size, 0)
 
+    def test_given_two_files_with_the_same_contents_when_fetching_their_digests_then_they_are_equal(self):
+        self.__create_file("report.pdf", "TEST_FILE_CONTENT")
+        self.__create_file("copy/report.pdf", "TEST_FILE_CONTENT")
+
+        self.assertEqual(
+            self.file_info_repository.fetch_digest(str(Path(self.root_folder, "report.pdf"))),
+            self.file_info_repository.fetch_digest(str(Path(self.root_folder, "copy/report.pdf"))),
+        )
+
+    def test_given_two_files_differing_past_the_first_chunk_when_fetching_their_digests_then_they_differ(self):
+        """The whole file is read, not only its first chunk."""
+        start = "x" * (FileInfoRepository.DIGEST_CHUNK_LENGTH + 10)
+        self.__create_file("movie.mkv", start + "A")
+        self.__create_file("other.mkv", start + "B")
+
+        self.assertNotEqual(
+            self.file_info_repository.fetch_digest(str(Path(self.root_folder, "movie.mkv"))),
+            self.file_info_repository.fetch_digest(str(Path(self.root_folder, "other.mkv"))),
+        )
+
+    def test_given_a_file_that_cannot_be_read_when_fetching_its_digest_then_it_raises(self):
+        """Never a digest of nothing: two unreadable files would read as identical."""
+        with self.assertRaises(OSError):
+            self.file_info_repository.fetch_digest(str(Path(self.root_folder, "gone.pdf")))
+
     def __create_file(self, relative_path: str, contents: str):
         file_path = Path(self.root_folder, relative_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)

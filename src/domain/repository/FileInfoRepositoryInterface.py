@@ -15,5 +15,9 @@ class FileInfoRepositoryInterface(ABC):
         pass
 
     @abstractmethod
+    def fetch_digest(self, full_path: str) -> str:
+        pass
+
+    @abstractmethod
     def remove_one(self, file_path: str):
         pass

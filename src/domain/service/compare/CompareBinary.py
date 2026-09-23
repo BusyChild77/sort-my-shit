@@ -2,6 +2,7 @@ from src.domain.event.EventManagerInterface import EventManagerInterface
 from src.domain.entity.FileInfo import FileInfo
 from src.domain.repository.FileInfoRepositoryInterface import FileInfoRepositoryInterface
 from src.domain.repository.SettingsRepositoryInterface import SettingsRepositoryInterface
+from src.domain.task.CancellationInterface import CancellationInterface
 
 
 class CompareBinary:
@@ -10,60 +11,70 @@ class CompareBinary:
         event_manager: EventManagerInterface,
         file_info_repository: FileInfoRepositoryInterface,
         settings_repository: SettingsRepositoryInterface,
+        cancellation: CancellationInterface,
     ):
         self.event_manager = event_manager
         self.file_info_repository = file_info_repository
         self.settings_repository = settings_repository
+        self.cancellation = cancellation
 
-    def compare(self, file1: FileInfo, file2: FileInfo):
-        self.event_manager.trigger(
-            "status",
-            f"Comparing {file2.full_path} with {file1.full_path}"
-        )
+    def group(self, files: list[FileInfo]) -> list[list[FileInfo]]:
+        """The files with identical contents, in groups of two or more, each in the order
+        it was listed. Cheapest test first: the size and the first bytes are already
+        known, so only the files agreeing on both are read, and each of them once."""
+        groups = []
 
-        if not self.__files_match_required_size(file1, file2):
-            return False
+        for candidates in self.__group_by(self.__comparable(files), lambda file: (file.size, file.partial_contents)):
+            if self.cancellation.is_cancelled():
+                break
 
-        if (
-            file2.full_path != file1.full_path
-            and file2.partial_contents == file1.partial_contents
-        ):
-            return self.__have_identical_contents(file1, file2)
+            groups += self.__group_by_contents(candidates)
 
-        return False
+        return groups
 
-    def __have_identical_contents(self, file1: FileInfo, file2: FileInfo) -> bool:
-        """Both files are read whole here, which is where a slow or flaky folder shows
-        up: a read that fails says nothing about whether the two match, so it answers
-        "not a duplicate" rather than raising. Nothing is deleted on a maybe, and one
-        unreadable file does not end an analysis that has already read thousands."""
-        try:
-            file_info1 = self.file_info_repository.fetch_one(
-                file1.full_path, with_full_contents=True
-            )
-            file_info2 = self.file_info_repository.fetch_one(
-                file2.full_path, with_full_contents=True
-            )
-        except OSError as failure:
-            self.event_manager.trigger(
-                "output",
-                f"Could not compare {file1.full_path} with {file2.full_path}: {failure}"
-            )
-            return False
+    def __comparable(self, files: list[FileInfo]) -> list[FileInfo]:
+        if self.settings_repository.fetch_one("binary_search_large_files") is True:
+            return files
 
-        return file_info1.contents == file_info2.contents
-
-    def __files_match_required_size(self, file: FileInfo, file_looked_up: FileInfo):
-        return (
-            self.__files_compared_are_not_too_large(file, file_looked_up)
-            or self.settings_repository.fetch_one("binary_search_large_files") is True
-        )
-
-    def __files_compared_are_not_too_large(self, file: FileInfo, file_looked_up: FileInfo):
         file_size_threshold = self.settings_repository.fetch_one(
             "binary_comparison_large_files_threshold"
         )
-        return (
-            file_looked_up.size < file_size_threshold
-            and file.size < file_size_threshold
-        )
+
+        return [file for file in files if file.size < file_size_threshold]
+
+    def __group_by_contents(self, files: list[FileInfo]) -> list[list[FileInfo]]:
+        digests = {}
+
+        for file in files:
+            # Checked per file: reading one whole is what takes minutes on a share.
+            if self.cancellation.is_cancelled():
+                return []
+
+            digest = self.__digest(file)
+
+            if digest is not None:
+                digests.setdefault(digest, []).append(file)
+
+        return [group for group in digests.values() if len(group) > 1]
+
+    def __digest(self, file: FileInfo) -> str:
+        """None for a file that could not be read, which is where a slow or flaky folder
+        shows up. A failed read says nothing about whether it matches, so the file is
+        left out rather than raising: nothing is deleted on a maybe, and one unreadable
+        file does not end an analysis that has already read thousands."""
+        self.event_manager.trigger("status", f"Reading {file.full_path}")
+
+        try:
+            return self.file_info_repository.fetch_digest(file.full_path)
+        except OSError as failure:
+            self.event_manager.trigger("output", f"Could not compare {file.full_path}: {failure}")
+            return None
+
+    @staticmethod
+    def __group_by(files: list[FileInfo], key) -> list[list[FileInfo]]:
+        groups = {}
+
+        for file in files:
+            groups.setdefault(key(file), []).append(file)
+
+        return [group for group in groups.values() if len(group) > 1]

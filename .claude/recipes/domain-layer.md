@@ -81,13 +81,22 @@ and a read that failed both hand back nothing for a file that is not empty, and 
 the service that deletes them. It asks again at removal time, because a file listed
 minutes ago may have been written to since.
 
+## Duplicate detection
+
+`CompareBinary` and `CompareFileName` never compare two files: each takes the whole list
+and hands back groups of files that match, the first one listed being the one kept.
+`CompareBinary` goes cheapest test first — size, then the first bytes already read, then
+a digest streamed by `FileInfoRepository.fetch_digest` — so a file is only read when
+another one agrees with it on both, and then once. `ListDuplicate` drops a path listed
+twice before grouping: two folders picked one inside the other list the same file twice,
+and a file grouped with itself is the only copy deleted.
+
 ## Cancelling
 
 Anything looping over user data takes a `CancellationInterface` and checks it between two
 files. It is cooperative: a service is never killed, so a run always stops on a whole file
-rather than in the middle of one. `ListDuplicate` checks it in the inner loop as well —
-one pass is a comparison per file and a binary one reads both files whole, which over a
-share is minutes. A cancelled sort returns before deleting emptied source folders: half a
+rather than in the middle of one. `CompareBinary` checks it before reading each file as
+well — reading a file whole is what takes minutes over a share. A cancelled sort returns before deleting emptied source folders: half a
 sort leaves files behind, and the folders holding them are not empty.
 
 ## Progress reporting
