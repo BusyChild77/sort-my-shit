@@ -127,10 +127,13 @@ class PlanSortTest(TestCase):
 
         self.assertEqual([operation.source_path for operation in operations], ["/source/report.pdf"])
 
-    def test_given_an_unknown_extension_when_planning_then_the_file_is_left_alone(self):
-        self.__given_files(["/source/notes.xyz"])
+    def test_given_files_that_no_category_lists_when_planning_then_they_land_in_misc(self):
+        self.__given_files(["/source/notes.xyz", "/source/README"])
 
-        self.assertEqual(self.sort_planner.plan(), [])
+        self.assertEqual(
+            [operation.destination_path for operation in self.sort_planner.plan()],
+            ["/destination/misc/README", "/destination/misc/notes.xyz"],
+        )
 
     def test_given_a_missing_source_folder_when_planning_then_it_is_skipped(self):
         self.folder_check_mock.readable.side_effect = lambda folders: ([], list(folders))

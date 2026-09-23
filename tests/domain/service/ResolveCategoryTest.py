@@ -23,8 +23,8 @@ class ResolveCategoryTest(TestCase):
     def test_given_an_uppercase_extension_when_resolving_then_its_category_is_returned(self):
         self.assertEqual(self.category_resolver.resolve("/folder/HOLIDAY.JPG"), "pics")
 
-    def test_given_an_unknown_extension_when_resolving_then_nothing_is_returned(self):
-        self.assertIsNone(self.category_resolver.resolve("/folder/archive.xyz"))
+    def test_given_an_unknown_extension_when_resolving_then_misc_is_returned(self):
+        self.assertEqual(self.category_resolver.resolve("/folder/archive.xyz"), "misc")
 
-    def test_given_a_file_without_extension_when_resolving_then_nothing_is_returned(self):
-        self.assertIsNone(self.category_resolver.resolve("/folder/README"))
+    def test_given_a_file_without_extension_when_resolving_then_misc_is_returned(self):
+        self.assertEqual(self.category_resolver.resolve("/folder/README"), "misc")

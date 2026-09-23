@@ -22,7 +22,7 @@ Every push to `main` publishes a build, on the
 
 - Sort files by type, from **several source folders at once**, into a single destination folder.
 - **Keep the original folder tree** and sort inside each level, or flatten everything into
-  one folder per category.
+  one folder per category. A file no category knows goes into `misc`.
 - **Preview every move before it happens**: the dry run lists exactly which file lands
   where, and nothing touches the disk until you confirm.
 - Choose whether the source files are **kept (copied) or moved**, and whether the source

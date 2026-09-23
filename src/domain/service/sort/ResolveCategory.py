@@ -4,18 +4,18 @@ from src.domain.repository.SettingsRepositoryInterface import SettingsRepository
 
 
 class ResolveCategory:
+    MISC = "misc"
+
     def __init__(self, settings_repository: SettingsRepositoryInterface):
         self.settings_repository = settings_repository
         self.__categories_by_extension = None
 
     def resolve(self, file_path: str) -> str:
-        """Return the category a file belongs to, or None when its extension is unknown."""
+        """Return the category a file belongs to, or MISC when it has no extension or one
+        that no category lists."""
         extension = os_path.splitext(file_path)[1].lstrip(".").lower()
 
-        if extension == "":
-            return None
-
-        return self.__categories().get(extension)
+        return self.__categories().get(extension, self.MISC)
 
     def __categories(self) -> dict:
         if self.__categories_by_extension is None:

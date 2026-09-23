@@ -29,7 +29,8 @@ anything else in the project.
 Three collaborators, deliberately kept apart:
 
 - `ResolveCategory` answers "which category does this file belong to", from the extension
-  mapping in `Settings.default_type_mapping`.
+  mapping in `Settings.default_type_mapping`. A file with no extension, or one no category
+  lists, goes to `ResolveCategory.MISC`: a sort leaves nothing behind.
 - `PlanSort` builds the `list[SortOperation]` a sort would perform: it applies
   `preserve_folder_tree`, walks every folder in `source_folders`, skips files that are
   already inside the destination, and renames a destination that is already taken

@@ -11,13 +11,14 @@ class Settings:
     default_type_mapping = {
         "docs": [
             "pdf", "pdf_lbk", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
-            "txt", "odt", "ods", "odp"
+            "txt", "odt", "ods", "odp", "md", "rtf", "csv", "html"
         ],
         "pics": [
             "jpg", "jpg_lbk", "jpeg", "jpeg_lbk", "png", "gif", "webp"
         ],
         "compressed": [
-            "zip", "rar", "tar", "gz", "7z", "xz", "bz2"
+            "zip", "rar", "tar", "gz", "7z", "xz", "bz2", "tgz", "tbz", "tbz2", "txz",
+            "tzst", "zst", "lz", "lzma", "lz4", "z", "cab", "arj", "lzh", "zipx", "cpio"
         ],
         "audio": [
             "mp3", "wma", "wav", "flac", "ogg", "m4a", "m4a_lbk", "aac"
@@ -26,10 +27,19 @@ class Settings:
             "m4v", "webm", "mp4", "avi", "mkv", "flv", "mov", "wmv"
         ],
         "software": [
-            "deb", "exe", "dmg", "pkg", "iso", "img", "apk", "rpm", "pat"
+            "deb", "exe", "dmg", "pkg", "iso", "img", "apk", "rpm", "pat", "flatpakref", "ova"
+        ],
+        "scripts": [
+            "sh"
+        ],
+        "projects": [
+            "xcf", "reason", "xoj", "aseprite", "yyz"
+        ],
+        "fonts": [
+            "ttf", "otf", "woff", "woff2", "eot", "ttc", "fon", "fnt", "pfb", "pfm", "afm", "dfont"
         ],
         "configuration": [
-            "json", "so", "ovpn"
+            "json", "so", "ovpn", "gimp", "pal"
         ],
     }
 

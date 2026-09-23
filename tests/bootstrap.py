@@ -9,6 +9,7 @@ from tests.application.service.PaginationTest import PaginationTest
 from tests.application.service.ShortcutTest import ShortcutTest
 from tests.application.service.TaglineProviderTest import TaglineProviderTest
 from tests.application.service.TypographyTest import TypographyTest
+from tests.domain.entity.SettingsTest import SettingsTest
 from tests.domain.entity.ThemeTest import ThemeTest
 from tests.domain.entity.VersionTest import VersionTest
 from tests.domain.service.ApplyUpdateTest import ApplyUpdateTest
@@ -38,6 +39,7 @@ test_cases = [
     ShortcutTest,
     TaglineProviderTest,
     TypographyTest,
+    SettingsTest,
     ThemeTest,
     VersionTest,
     ApplyUpdateTest,

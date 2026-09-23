@@ -82,9 +82,6 @@ class PlanSort:
 
             category = self.category_resolver.resolve(file_path)
 
-            if category is None:
-                continue
-
             operations.append(
                 SortOperation(
                     source_path=file_path,
