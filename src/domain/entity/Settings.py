@@ -2,6 +2,12 @@ from src.domain.entity.Theme import Theme
 
 
 class Settings:
+    """The defaults, and what an older settings file is migrated from, see
+    .claude/recipes/settings.md:17. renamed_user_settings maps a legacy name to its
+    current one, folder_list_user_settings lists the settings once holding a single
+    folder, and legacy_theme_colors maps a flat color used before the "theme" setting to
+    the theme color it became."""
+
     default_type_mapping = {
         "docs": [
             "pdf", "pdf_lbk", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
@@ -45,20 +51,16 @@ class Settings:
         "binary_comparison_large_files_threshold": 5000000,
     }
 
-    # Settings renamed since version 1: {legacy name: current name}
     renamed_user_settings = {
         "folder_to_process": "source_folders",
         "remove_duplicates_folder": "remove_duplicates_folders",
     }
 
-    # Settings holding a list of folders. Each was a single folder once, so a value read
-    # as a string is the older shape and becomes a one folder list.
     folder_list_user_settings = (
         "source_folders",
         "remove_duplicates_folders",
     )
 
-    # Flat theme colors used before the "theme" setting: {legacy name: theme color}
     legacy_theme_colors = {
         "color1": "background",
         "color2": "surface",

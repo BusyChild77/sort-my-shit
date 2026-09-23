@@ -68,8 +68,8 @@ class FileSystemRepository(FileSystemRepositoryInterface):
 
     @staticmethod
     def __answer(folder_path: str, answer: list):
-        # Appending is what says the stat came back at all, so it happens whatever the
-        # answer was. isdir swallows the usual refusals itself and returns False.
+        """Appends whatever the answer was: appending is what says the stat came back at
+        all. isdir swallows the usual refusals itself and returns False."""
         try:
             answer.append(os_path.isdir(folder_path))
         except OSError:

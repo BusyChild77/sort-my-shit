@@ -1,5 +1,3 @@
-# _MEIPASS only exists once PyInstaller has unpacked the bundle, so sys is read
-# through getattr rather than imported from.
 import ctypes
 import sys
 
@@ -14,18 +12,18 @@ class FontProvider:
     this process only, nothing is installed on the machine. Every call is allowed to
     fail: a font that could not be registered simply is not in the families Tk reports,
     and Typography falls back to a monospace the machine already has.
+
+    FAMILIES is a list although it holds one name, see .claude/recipes/fonts.md:28.
+    WINDOWS_PRIVATE_FONT is AddFontResourceEx's FR_PRIVATE and MACOS_PROCESS_SCOPE is
+    CTFontManagerRegisterFontsForURL's kCTFontManagerScopeProcess: both make the font
+    visible to this process and add it to no font folder.
     """
 
-    # The names the file answers to. One here, but the list stays: a font whose weight
-    # is neither regular nor bold is listed by Windows under a family name of its own,
-    # and both have to be asked for when that happens.
     FAMILIES = ("Monometric",)
     FONT_FILE = "title-font.otf"
     BUNDLED_ASSETS = os_path.join("src", "application", "assets")
 
-    # AddFontResourceEx, FR_PRIVATE: visible to this process, added to no font folder.
     WINDOWS_PRIVATE_FONT = 0x10
-    # CTFontManagerRegisterFontsForURL, kCTFontManagerScopeProcess: the same idea.
     MACOS_PROCESS_SCOPE = 1
 
     def __init__(self):
@@ -39,6 +37,8 @@ class FontProvider:
         return self.registered
 
     def path(self) -> str:
+        """_MEIPASS only exists once PyInstaller has unpacked the bundle, so it is read
+        through getattr."""
         bundle = getattr(sys, "_MEIPASS", None)
 
         if bundle is not None:
@@ -83,13 +83,13 @@ class FontProvider:
         return bool(text.CTFontManagerRegisterFontsForURL(url, self.MACOS_PROCESS_SCOPE, None))
 
     def __register_with_fontconfig(self, font: str) -> bool:
+        """No configuration is handed over: the one X11 and Tk are already reading is the
+        one the font has to end up in."""
         fontconfig = ctypes.CDLL("libfontconfig.so.1")
 
         fontconfig.FcConfigAppFontAddFile.restype = ctypes.c_int
         fontconfig.FcConfigAppFontAddFile.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 
-        # No configuration handed over: the one X11 and Tk are already reading is the
-        # one the font has to end up in.
         return fontconfig.FcConfigAppFontAddFile(None, font.encode()) == 1
 
     def __assets_directory(self) -> str:

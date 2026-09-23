@@ -72,8 +72,7 @@ class RemoveEmptyFile:
         )
 
     def __remove(self, file: FileInfo) -> bool:
-        # Asked a second time, on the way out rather than on the way in: a file listed
-        # minutes ago may have been written to, or finally downloaded, since.
+        """Checks the file is empty a second time, see .claude/recipes/domain-layer.md:81."""
         if not self.__is_certainly_empty(file):
             return True
 

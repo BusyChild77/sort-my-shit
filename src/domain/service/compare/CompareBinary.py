@@ -43,10 +43,11 @@ class CompareBinary:
         return [file for file in files if file.size < file_size_threshold]
 
     def __group_by_contents(self, files: list[FileInfo]) -> list[list[FileInfo]]:
+        """Cancellation is checked before each file, see
+        .claude/recipes/domain-layer.md:98."""
         digests = {}
 
         for file in files:
-            # Checked per file: reading one whole is what takes minutes on a share.
             if self.cancellation.is_cancelled():
                 return []
 

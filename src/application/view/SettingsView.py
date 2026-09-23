@@ -18,11 +18,13 @@ from src.infrastructure.repository.SettingsRepository import SettingsRepository
 
 class SettingsView(SMSView):
     """The options that change how an action behaves. The folders each action works on
-    are picked on the action's own screen."""
+    are picked on the action's own screen.
 
-    # A paragraph left to itself makes its section as wide as its longest sentence,
-    # and two of those no longer fit side by side. Wrapped short of the longest option
-    # on the screen, so it is never the paragraph that decides the column count.
+    A paragraph left to itself makes its section as wide as its longest sentence, and two
+    of those no longer fit side by side. BLURB_WRAP_LENGTH wraps it short of the longest
+    option on the screen, so it is never the paragraph that decides the column count.
+    """
+
     BLURB_WRAP_LENGTH = 480
 
     def __init__(
@@ -140,6 +142,8 @@ class SettingsView(SMSView):
         return section
 
     def __create_support_section(self, container) -> SMSSection:
+        """The line under the links stays out of the layout until a link refuses to open,
+        see .claude/recipes/application-layer.md:188."""
         section = SMSSection(container, self.theme, "Support")
 
         SMSLabel(
@@ -192,8 +196,6 @@ class SettingsView(SMSView):
             font=Typography.SMALL,
             wraplength=self.BLURB_WRAP_LENGTH,
         )
-        # Gridded and taken straight back out: it has nothing to say until a link
-        # refuses to open, and an empty label still takes a line of the section.
         self.link_state.grid(row=5, column=0, sticky="w", pady=(10, 0))
         self.link_state.grid_remove()
 
@@ -213,8 +215,8 @@ class SettingsView(SMSView):
         self.update_prompt.check(self, announce=self.__announce_update)
 
     def __announce_update(self, message: str):
-        # The section is rebuilt on a theme change, so the label may be gone by the time
-        # a check started before it comes back with an answer.
+        """The section is rebuilt on a theme change, so the label may be gone by the time
+        a check started before it comes back with an answer."""
         if self.update_state is not None and self.update_state.winfo_exists():
             self.update_state.set_text(message)
 

@@ -81,11 +81,11 @@ class UpdatePrompt:
         Thread(target=lambda: self.__applied(widget, announce, release), daemon=True).start()
 
     def __applied(self, widget, announce, release):
+        """The failure is bound as a default argument: Python unbinds the name at the end
+        of the except block, so a lambda closing over it would fire on nothing."""
         try:
             outcome = self.apply_update.apply(release)
         except OSError as failure:
-            # Bound as a default argument: Python unbinds the name at the end of the
-            # except block, so a lambda closing over it would fire on nothing.
             widget.after(0, lambda error=failure: self.__failed(announce, error))
             return
 
@@ -109,8 +109,8 @@ class UpdatePrompt:
             self.__restart(widget)
 
     def __restart(self, widget):
-        # Windows spawns the new process and needs this one gone to release the file it
-        # just replaced; everywhere else execv takes the process over and never returns.
+        """Windows spawns the new process and needs this one gone to release the file it
+        just replaced; everywhere else execv takes the process over and never returns."""
         self.installation_repository.restart()
         widget.winfo_toplevel().destroy()
 

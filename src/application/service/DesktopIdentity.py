@@ -10,15 +10,12 @@ class DesktopIdentity:
     the window under an icon of its own labelled "Tk", beside the one that was clicked.
 
     The class can only be given to Tk as the window is created, so the window is built
-    here rather than in Main, and the two names are set in the one place.
+    here rather than in Main, and the two names are set in the one place. NAME is the one
+    the user reads, APPLICATION the one the match is made on, see
+    .claude/recipes/desktop-identity.md:3.
     """
 
-    # The title bar, and the label under the icon once the window has been matched to
-    # its launcher.
     NAME = "Sort My Shit"
-
-    # What that match is made on: the WM_CLASS of the window under X11, and under
-    # Wayland through XWayland, which Tk is what runs on.
     APPLICATION = "sortmyshit"
 
     def window(self) -> Tk:

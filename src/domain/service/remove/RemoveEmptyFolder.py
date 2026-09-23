@@ -21,6 +21,8 @@ class RemoveEmptyFolder:
         self.cancellation = cancellation
 
     def list_empty_folders(self) -> list[str]:
+        """The count is the last thing said, so a folder that could not be read is still
+        on screen rather than wiped by a "Done" nobody needed."""
         empty_folders = []
         self.event_manager.trigger("status", "Begin empty folders listing")
 
@@ -40,8 +42,6 @@ class RemoveEmptyFolder:
                     f"Found empty directory {empty_folder}"
                 )
 
-        # The count is the last thing said, so a folder that could not be read is still
-        # on screen rather than wiped by a "Done" nobody needed.
         self.event_manager.trigger(
             "status",
             f"Finished listing empty directories. {len(empty_folders)} folder(s) found."

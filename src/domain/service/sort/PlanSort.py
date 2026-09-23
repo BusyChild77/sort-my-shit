@@ -29,14 +29,14 @@ class PlanSort:
         self.cancellation = cancellation
 
     def plan(self) -> list[SortOperation]:
+        """Nothing is planned when the destination cannot be reached, see
+        .claude/recipes/domain-layer.md:64."""
         settings = self.settings_repository.fetch_all()
         destination_folder = os_path.abspath(settings["destination_folder"])
         preserve_folder_tree = settings["preserve_folder_tree"]
 
         self.event_manager.trigger("status", "Planning the sort")
 
-        # A destination that is not there yet is planned for and created on the way; one
-        # behind a mount that says nothing would fail on every single file instead.
         if not self.folder_check.reachable(destination_folder):
             self.event_manager.trigger("status", f"Nothing planned, {destination_folder} could not be reached")
             return []

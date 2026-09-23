@@ -3,6 +3,9 @@ class Theme:
 
     Only the colors listed in EDITABLE_COLORS are stored; every other shade
     used by the interface is derived from them so a palette stays coherent.
+
+    The Poo preset's accent is the gold the icon is drawn in, read out of the artwork
+    itself: the one preset wearing the application's own colors.
     """
 
     EDITABLE_COLORS = {
@@ -42,8 +45,6 @@ class Theme:
             "accent": "#2F6FEB",
             "text": "#1B1F24",
         },
-        # The accent is the gold the icon is drawn in, read out of the artwork itself:
-        # the one preset wearing the application's own colors.
         "Poo": {
             "background": "#17100A",
             "surface": "#241A10",

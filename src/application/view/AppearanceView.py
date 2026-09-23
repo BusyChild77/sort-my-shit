@@ -9,11 +9,13 @@ from src.domain.entity.Theme import Theme
 
 
 class AppearanceView(SMSView):
-    """Palette editor. Every change is saved and applied to the whole interface at once."""
+    """Palette editor. Every change is saved and applied to the whole interface at once.
 
-    # A row of presets grows with every palette added, and past the width of the window
-    # it is cut off rather than wrapped. Four to a line keeps it inside the narrowest
-    # the window goes, and keeps the section narrow enough to sit beside the colors.
+    A row of presets grows with every palette added, and past the width of the window it
+    is cut off rather than wrapped. PRESETS_PER_ROW at four keeps it inside the narrowest
+    the window goes, and keeps the section narrow enough to sit beside the colors.
+    """
+
     PRESETS_PER_ROW = 4
 
     def __init__(
@@ -37,6 +39,10 @@ class AppearanceView(SMSView):
         ])
 
     def __create_presets_section(self, container) -> SMSSection:
+        """Every button is as wide as the longest name rather than as wide as its own.
+        They wrap onto a second line, and a ragged grid of them reads as a mistake --
+        they are one set of swatches, and nothing about a palette makes its button
+        narrower."""
         section = SMSSection(container, self.theme, "Presets")
 
         presets = SMSButtonContainer(
@@ -46,9 +52,6 @@ class AppearanceView(SMSView):
             columns=self.PRESETS_PER_ROW,
         )
 
-        # Every button as wide as the longest name rather than as wide as its own. They
-        # wrap onto a second line, and a ragged grid of them reads as a mistake -- they
-        # are one set of swatches, and nothing about a palette makes its button narrower.
         width = max(len(preset_name) for preset_name in Theme.PRESETS) + 2
 
         presets.set_buttons([

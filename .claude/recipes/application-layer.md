@@ -86,7 +86,7 @@ in the background and calls the run from *its* result, never from a return value
 
 `SMSView.subscribe` registers an `EventBridge` listener rather than the one it is given,
 so a service reporting from the worker never touches a widget from there. **Status is
-coalesced and output is not**: a binary comparison reports a status per pair of files, and
+coalesced and output is not**: a binary comparison reports a status per file it reads, and
 queueing every one of those would fill the Tk queue faster than it drains, while an output
 line is the record of something that happened to a file and dropping one loses it from the
 console and the log.

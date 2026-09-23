@@ -19,14 +19,14 @@ class LogFileLogger:
         self.event_manager.subscribe("output", self.log_in_file)
 
     def log_in_file(self, log_message):
+        """The log folder is created with exist_ok, because an action reports from a
+        worker while the interface reports from the Tk thread, and both land here."""
         if not self.settings_repository.fetch_one("log_output_in_file"):
             return
 
         log_dir = os_path.join(self.settings_repository.runDir, "log")
         log_file = os_path.join(log_dir, "log.txt")
 
-        # exist_ok because an action reports from a worker while the interface reports
-        # from the Tk thread, and both of them land here.
         os_makedirs(log_dir, exist_ok=True)
 
         with open(log_file, "a") as file:

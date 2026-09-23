@@ -15,10 +15,12 @@ class RunDirectory:
     - a macOS .app buries the binary under Contents/MacOS, so the bundle is what counts;
     - an executable installed system wide sits in a folder the user cannot write to,
       and the settings go to their own configuration folder instead.
+
+    MACOS_BUNDLE_DEPTH counts SortMyShit.app/Contents/MacOS/SortMyShit.
     """
 
     APPLICATION_NAME = "SortMyShit"
-    MACOS_BUNDLE_DEPTH = 3  # SortMyShit.app/Contents/MacOS/SortMyShit
+    MACOS_BUNDLE_DEPTH = 3
 
     @classmethod
     def resolve(cls) -> str:

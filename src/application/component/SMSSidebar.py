@@ -8,7 +8,11 @@ from src.domain.entity.Theme import Theme
 
 
 class SMSSidebar(Frame):
-    """Left hand navigation. One entry per view, the active one is highlighted."""
+    """Left hand navigation. One entry per view, the active one is highlighted.
+
+    Everything inside is sized from inner_width and the tagline wraps to it, see
+    .claude/recipes/application-layer.md:162 and :167.
+    """
 
     PADDING = 16
 
@@ -26,8 +30,6 @@ class SMSSidebar(Frame):
         self.grid_propagate(0)
         self.theme = theme
         self.on_select = on_select
-        # The side bar is the one fixed width part of the window, so its children are
-        # given the room left by the padding rather than a width of their own.
         self.inner_width = width - 2 * self.PADDING
         self.buttons = {}
 
@@ -39,8 +41,6 @@ class SMSSidebar(Frame):
             bg=theme.surface,
             fg=theme.muted,
             font=Typography.SMALL,
-            # The taglines are not all one line long, and the side bar cannot widen for
-            # the longest of them, so it is wrapped rather than cut off.
             wraplength=self.inner_width,
         ).grid(row=1, column=0, sticky="w", pady=(0, 22))
 
@@ -59,12 +59,11 @@ class SMSSidebar(Frame):
             entry.shortcut.config(background=background, fg=self.theme.on_accent if is_active else self.theme.muted)
 
     def __create_wordmark(self, logo: PhotoImage) -> Frame:
-        """The logo and the name of the application, on one line."""
+        """The logo and the name of the application, on one line. The image is held on the
+        widget that draws it, see .claude/recipes/application-layer.md:150."""
         wordmark = Frame(self, background=self.theme.surface)
 
         icon = Label(wordmark, image=logo, background=self.theme.surface, borderwidth=0)
-        # Tk keeps no reference of its own, and the side bar is rebuilt whenever the
-        # theme changes, so the image is held on the widget that draws it.
         icon.image = logo
         icon.grid(row=0, column=0, sticky="w", padx=(0, 10))
 

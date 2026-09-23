@@ -16,6 +16,8 @@ class SMSLabel(Label):
         anchor: str = "w",
         wraplength: int = 0,
     ):
+        """wraplength defaults to 0, Tk's own "never wrap", which is what every label
+        but a paragraph wants."""
         self.text_variable = StringVar(container, text)
 
         super().__init__(
@@ -27,7 +29,6 @@ class SMSLabel(Label):
             pady=pady,
             anchor=anchor,
             justify="left",
-            # 0 is Tk's own "never wrap", which is what every other label wants.
             wraplength=wraplength,
             font=font or Typography.BODY,
         )

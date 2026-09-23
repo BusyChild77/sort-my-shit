@@ -32,12 +32,13 @@ class SMSFolderList(Frame):
         folders: list[str],
         on_change: Callable,
     ):
+        """folder_vars holds on to every field's variable: Tk drops a variable that
+        nothing references, blanking the field it feeds."""
         super().__init__(master=container, background=theme.background)
         self.columnconfigure(0, weight=1)
         self.theme = theme
         self.folders = list(folders)
         self.on_change = on_change
-        # Tk drops a variable that nothing references, blanking the field it feeds.
         self.folder_vars = []
         self.typed_folder = StringVar()
 

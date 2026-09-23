@@ -10,8 +10,8 @@ class SettingsRepository(SettingsRepositoryInterface):
     runDir: str = None
 
     def __init__(self):
-        # The application is the only writer, so the parsed file is kept in memory:
-        # fetch_one is called inside the comparison and sorting loops.
+        """The application is the only writer, so the parsed file is kept in memory:
+        fetch_one is called inside the comparison and sorting loops."""
         self.cached_settings = None
 
     def fetch_all(self):

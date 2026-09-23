@@ -31,6 +31,8 @@ class ListDuplicate:
         self.cancellation = cancellation
 
     def list_duplicates(self):
+        """In each match, the first file listed is kept and the others are its
+        duplicates, see .claude/recipes/domain-layer.md:86."""
         self.event_manager.trigger("status", "Fetching files")
 
         folders, unreadable = self.folder_check.readable(
@@ -50,7 +52,6 @@ class ListDuplicate:
         else:
             groups = self.file_name_comparator.group(all_files)
 
-        # The first one listed is kept, the others are the duplicates of it.
         duplicate_matches = [DuplicateMatch(group[1:], group[0]) for group in groups]
 
         if self.cancellation.is_cancelled():

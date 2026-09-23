@@ -1,12 +1,13 @@
-# @see https://stackoverflow.com/questions/16188420/tkinter-scrollbar-for-frame
-
 from tkinter import Frame, Scrollbar, Canvas
 
 from src.domain.entity.Theme import Theme
 
 
 class SMSScrollableFrame(Frame):
-    """Vertically scrolling area that fills whatever room its parent gives it."""
+    """Vertically scrolling area that fills whatever room its parent gives it.
+
+    Built on https://stackoverflow.com/questions/16188420/tkinter-scrollbar-for-frame
+    """
 
     def __init__(self, container, theme: Theme):
         super().__init__(master=container, bg=theme.background)
@@ -26,6 +27,8 @@ class SMSScrollableFrame(Frame):
         self.create_scrollable_frame()
 
     def create_scrollable_frame(self):
+        """The interior is kept as wide as the canvas, so the cards inside it can
+        stretch."""
         vscrollbar = Scrollbar(
             self,
             orient="vertical",
@@ -59,7 +62,6 @@ class SMSScrollableFrame(Frame):
         self.interior.bind('<Configure>', __configure_interior)
 
         def __configure_canvas(event):
-            # The interior always spans the canvas, so the cards inside it can stretch.
             canvas.itemconfigure(interior_id, width=canvas.winfo_width())
 
         canvas.bind('<Configure>', __configure_canvas)

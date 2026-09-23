@@ -3,11 +3,11 @@ class Version:
 
     `CURRENT` is the version of the running build. It keeps the development value in the
     sources and is stamped by the release workflow, so a build that was never released
-    never believes itself to be a released one.
+    never believes itself to be a released one, see .claude/recipes/updating.md:3.
     """
 
     DEVELOPMENT = "0.0.0"
-    CURRENT = "0.0.0"  # stamped at build time, see .github/workflows/release.yml
+    CURRENT = "0.0.0"
 
     NUMBERS = 3
 

@@ -18,7 +18,6 @@ class BinaryComparatorTest(TestCase):
         self.settings_repository_mock = Mock(SettingsRepositoryInterface)
         self.settings_repository_mock.fetch_one.side_effect = lambda name: self.settings[name]
 
-        # What each file reads back as, by path. A path missing from it cannot be read.
         self.digests = {}
         self.file_info_repository_mock = Mock(FileInfoRepositoryInterface)
         self.file_info_repository_mock.fetch_digest.side_effect = self.__fetch_digest
@@ -124,6 +123,8 @@ class BinaryComparatorTest(TestCase):
         return FileInfo(full_path, full_path.split("/")[-1], size, partial_contents)
 
     def __fetch_digest(self, full_path: str) -> str:
+        """What the file at full_path reads back as, from the digests __file recorded. A
+        path missing from them cannot be read."""
         if full_path not in self.digests:
             raise OSError("unreadable")
 

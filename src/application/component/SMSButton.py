@@ -46,8 +46,8 @@ class SMSButton(Button):
         self.bind("<Leave>", lambda event: self.__hover(self.idle_bg))
 
     def __hover(self, background: str):
-        # Tk keeps sending these to a disabled button, and a button that lights up under
-        # the pointer while it refuses to be clicked reads as a broken one.
+        """Ignored on a disabled button, which Tk keeps sending these to: a button that
+        lights up under the pointer while it refuses to be clicked reads as a broken one."""
         if str(self["state"]) == "disabled":
             return
 

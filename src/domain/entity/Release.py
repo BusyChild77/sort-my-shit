@@ -2,11 +2,14 @@ from src.domain.entity.Version import Version
 
 
 class Release:
-    """A published release: the version it carries, and the file to download per platform."""
+    """A published release: the version it carries, and the file to download per platform.
+
+    assets maps a file name to its download url.
+    """
 
     def __init__(self, version: Version, assets: dict, page_url: str = ""):
         self.version = version
-        self.assets = assets  # {file name: download url}
+        self.assets = assets
         self.page_url = page_url
 
     def asset_named_like(self, suffix: str) -> tuple:

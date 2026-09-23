@@ -1,5 +1,3 @@
-# _MEIPASS only exists once PyInstaller has unpacked the bundle, so sys is read
-# through getattr rather than imported from.
 import sys
 
 from os import path as os_path
@@ -12,13 +10,14 @@ class IconProvider:
     The file sits next to the sources when the app is run with python, and inside the
     folder PyInstaller unpacks the bundle into once it is compiled, so the lookup goes
     through both rather than through the current working directory.
+
+    LOGO_SIZE is the side of the side bar logo in pixels, see
+    .claude/recipes/application-layer.md:156.
     """
 
     ICON_FILE = "icon.png"
     BUNDLED_ASSETS = os_path.join("src", "application", "assets")
 
-    # The side of the logo shown beside the side bar wordmark, in pixels. The artwork is
-    # square and much larger, and Tk only shrinks an image by whole divisions of it.
     LOGO_SIZE = 32
 
     def __init__(self):
@@ -26,8 +25,7 @@ class IconProvider:
         self.logo_image = None
 
     def get(self) -> PhotoImage:
-        # Tk keeps no reference of its own and drops the icon as soon as the
-        # PhotoImage is garbage collected, so the instance is held here.
+        """Held once built, see .claude/recipes/application-layer.md:150."""
         if self.icon is None:
             self.icon = PhotoImage(file=self.path())
 
@@ -49,6 +47,8 @@ class IconProvider:
         return max(1, width // cls.LOGO_SIZE)
 
     def path(self) -> str:
+        """_MEIPASS only exists once PyInstaller has unpacked the bundle, so it is read
+        through getattr."""
         bundle = getattr(sys, "_MEIPASS", None)
 
         if bundle is not None:

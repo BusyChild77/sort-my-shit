@@ -49,7 +49,9 @@ class SMSView(ABC, Frame):
         task_runner: TaskRunner = None,
     ):
         """task_runner is passed by the screens whose buttons start a long action, and
-        left out by the ones that only draw — Settings, Appearance, Console."""
+        left out by the ones that only draw — Settings, Appearance, Console. The event
+        bridge is built once the Frame exists: it is the widget the events are handed back
+        through."""
         self.theme = theme_provider.get()
         self.event_manager = event_manager
         self.task_runner = task_runner
@@ -79,7 +81,6 @@ class SMSView(ABC, Frame):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(self.ROW_BODY, weight=1)
 
-        # After the Frame exists: it is the widget the events are handed back through.
         self.event_bridge = EventBridge(self)
 
     @abstractmethod
@@ -112,13 +113,12 @@ class SMSView(ABC, Frame):
 
         settings maps a setting name to its label. A setting holding a list of folders
         is rendered as an editable list, a single folder as a field with a browse button.
+        The two rules around it are drawn here, see
+        .claude/recipes/application-layer.md:47.
         """
         self.folder_settings_repository = settings_repository
         self.folder_settings = settings
 
-        # The folder area is what separates the heading from the results, so it is
-        # the one bracketing the screen with its two rules. A screen without folders
-        # — Settings, Appearance, Console — is a single block and gets neither.
         SMSSeparator(self, self.theme).grid(row=self.ROW_TITLE_RULE, column=0, sticky="ew", pady=(18, 0))
 
         self.folders = Frame(self, background=self.theme.background)
@@ -197,6 +197,10 @@ class SMSView(ABC, Frame):
         They are laid inside a scrolling area: a single column of sections is taller than
         the window at its minimum height, and without one the last of them is simply cut
         off with no way of reaching it.
+
+        The re-flow is bound on the scrolled area and not on the view, see
+        .claude/recipes/application-layer.md:102, with add="+" so the frame keeps the
+        handler holding its own scroll region.
         """
         scroller = SMSScrollableFrame(self, self.theme)
         scroller.grid(row=self.ROW_BODY, column=0, sticky="nsew", pady=(22, 0))
@@ -207,9 +211,6 @@ class SMSView(ABC, Frame):
         self.sections_body = body
         self.section_columns = 0
 
-        # Bound on the scrolled area and not on the view: it is its width, the scrollbar
-        # already taken out of it, that decides how many columns fit. add="+" so the
-        # frame keeps the handler holding its own scroll region.
         body.bind("<Configure>", lambda event: self.__reflow_sections(), add="+")
         self.__reflow_sections()
 

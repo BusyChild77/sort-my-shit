@@ -14,18 +14,18 @@ from src.manager.ViewManager import ViewManager
 
 
 class SMSRenderer:
-    """Owns the window chrome: side bar, menu, shortcuts, and the visible view."""
+    """Owns the window chrome: side bar, menu, shortcuts, and the visible view.
+
+    Below WINDOW_MINIMUM_WIDTH the toolbars and the two folder columns start fighting for
+    room; the side bar takes its width out of the window, so it is counted in it.
+    NAVIGATION and ACTION_ENTRIES are described in .claude/recipes/application-layer.md:213.
+    """
 
     WINDOW_SIZE = "1600x900"
 
-    # Below this the toolbars and the two folder columns start fighting for room; the
-    # side bar takes its width out of the window, so it is counted in here.
     WINDOW_MINIMUM_WIDTH = 1150
     WINDOW_MINIMUM_HEIGHT = 640
 
-    # (view name, label, shortcut letter). The letter is pressed with Alt -- see
-    # Shortcut -- and the first ACTION_ENTRIES of these are the ones the Actions menu
-    # lists, the rest being the preferences the File menu holds.
     ACTION_ENTRIES = 5
 
     NAVIGATION = [
@@ -56,17 +56,20 @@ class SMSRenderer:
         self.current_view_name = "sort_files"
 
     def render(self, root: Tk, view_manager: ViewManager):
+        """The font is registered before the families are read, see
+        .claude/recipes/fonts.md:12, and the icon is applied to the dialogs as well, see
+        .claude/recipes/application-layer.md:152. The update check comes last, so its
+        prompt has a window to sit over rather than appearing on its own while the
+        interface is still being built."""
         self.root = root
         self.view_manager = view_manager
 
-        # Before the families are read, or the title font would not be among them.
         self.font_provider.register()
 
         Typography.resolve_families(tk_font.families(root))
         tk_font.nametofont("TkDefaultFont").configure(family=Typography.FAMILY, size=11)
         tk_font.nametofont("TkMenuFont").configure(family=Typography.FAMILY, size=11)
 
-        # True so the dialogs the views open carry the icon as well.
         root.iconphoto(True, self.icon_provider.get())
         root.geometry(self.WINDOW_SIZE)
         root.minsize(self.WINDOW_MINIMUM_WIDTH, self.WINDOW_MINIMUM_HEIGHT)
@@ -78,8 +81,6 @@ class SMSRenderer:
 
         self.__render_chrome()
 
-        # After the chrome, so the prompt has a window to sit over rather than
-        # appearing on its own while the interface is still being built.
         self.update_prompt.check_on_startup(root)
 
     def reload(self):

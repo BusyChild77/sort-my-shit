@@ -96,8 +96,9 @@ and a file grouped with itself is the only copy deleted.
 Anything looping over user data takes a `CancellationInterface` and checks it between two
 files. It is cooperative: a service is never killed, so a run always stops on a whole file
 rather than in the middle of one. `CompareBinary` checks it before reading each file as
-well — reading a file whole is what takes minutes over a share. A cancelled sort returns before deleting emptied source folders: half a
-sort leaves files behind, and the folders holding them are not empty.
+well — reading a file whole is what takes minutes over a share. A cancelled sort returns
+before deleting emptied source folders: half a sort leaves files behind, and the folders
+holding them are not empty.
 
 ## Progress reporting
 

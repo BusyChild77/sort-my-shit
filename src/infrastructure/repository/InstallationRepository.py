@@ -1,5 +1,3 @@
-# sys is read through getattr because "frozen" only exists once PyInstaller has
-# packaged the app, and sys.platform is needed at class level nowhere else.
 import sys
 
 from os import chmod as os_chmod, environ as os_environ, execv as os_execv, path as os_path, \
@@ -23,6 +21,8 @@ class InstallationRepository(InstallationRepositoryInterface):
     PREVIOUS_SUFFIX = ".old"
 
     def packaged_form(self) -> str:
+        """"frozen" only exists once PyInstaller has packaged the app, so it is read
+        through getattr."""
         if not getattr(sys, "frozen", False):
             return self.SOURCES
 

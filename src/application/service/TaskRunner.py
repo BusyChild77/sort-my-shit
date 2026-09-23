@@ -48,24 +48,24 @@ class TaskRunner(CancellationInterface):
         self.cancelled = True
 
     def __worked(self, widget, work: Callable, done: Callable, failed: Callable):
+        """Catches anything at all, not only OSError: a screen left showing a disabled
+        toolbar because the worker died quietly is worse than a message saying what broke.
+        The failure is passed on as an argument, before Python unbinds the name at the end
+        of the except block."""
         try:
             result = work()
         except Exception as failure:
-            # Anything at all, not only OSError: a screen left showing a disabled toolbar
-            # because the worker died quietly is worse than a message saying what broke.
-            # The failure is passed on as an argument, before Python unbinds the name at
-            # the end of this block.
             self.__hand_back(widget, failed, failure)
             return
 
         self.__hand_back(widget, done, result)
 
     def __hand_back(self, widget, call: Callable, value):
+        """Frees the runner when the window went away while the work was running, see
+        .claude/recipes/application-layer.md:132."""
         try:
             widget.after(0, lambda: self.__finished(call, value))
         except (TclError, RuntimeError):
-            # The window went away while the work was running. There is nobody left to
-            # tell, and the runner has to be freed here or it stays busy forever.
             self.running = False
 
     def __finished(self, call: Callable, value):

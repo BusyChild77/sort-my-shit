@@ -20,8 +20,6 @@ Three things follow from that, and each is load bearing:
   [application-layer.md](application-layer.md). A scan over a share is minutes, and Tk stops painting for all of it
   otherwise.
 
-Two gaps are known and deliberate. A share that is unmounted but whose mount point still
+One gap is known and deliberate. A share that is unmounted but whose mount point still
 exists locally reads as a readable empty folder, which no probe can tell apart without
-reading the mount table. And a duplicate scan still compares every pair of files by
-reading both whole, which is the expensive thing to do over a network; grouping by size
-and digest first is the fix, and it is not done yet.
+reading the mount table.
