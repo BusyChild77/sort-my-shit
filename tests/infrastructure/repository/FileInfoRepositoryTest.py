@@ -23,9 +23,11 @@ class FileInfoRepositoryTest(TestCase):
         self.settings_repository_mock = Mock(SettingsRepository)
         self.settings_repository_mock.fetch_one.side_effect = lambda name: self.settings[name]
 
+        self.event_manager_mock = Mock(EventManager)
+
         self.file_info_repository = FileInfoRepository(
             self.settings_repository_mock,
-            Mock(EventManager),
+            self.event_manager_mock,
         )
 
         super().setUp()
@@ -71,6 +73,18 @@ class FileInfoRepositoryTest(TestCase):
 
         self.assertEqual([file.file_name for file in files], ["empty.txt"])
         self.assertEqual(files[0].size, 0)
+
+    def test_given_a_symlink_to_a_file_when_fetching_a_folder_then_only_the_file_is_returned_and_the_link_is_logged(self):
+        """Read back, a link is identical to the file it points to, and removing the file
+        as its duplicate would leave a link pointing at nothing."""
+        self.__create_file("report.pdf", "TEST_FILE_CONTENT")
+        link_path = str(Path(self.root_folder, "report link.pdf"))
+        Path(link_path).symlink_to(Path(self.root_folder, "report.pdf"))
+
+        files = self.file_info_repository.fetch_all_from_folder(self.root_folder)
+
+        self.assertEqual([file.file_name for file in files], ["report.pdf"])
+        self.event_manager_mock.trigger.assert_any_call("output", "Skipping symlink " + link_path)
 
     def test_given_two_files_with_the_same_contents_when_fetching_their_digests_then_they_are_equal(self):
         self.__create_file("report.pdf", "TEST_FILE_CONTENT")

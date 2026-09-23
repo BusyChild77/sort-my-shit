@@ -75,13 +75,18 @@ class FileInfoRepository(FileInfoRepositoryInterface):
 
     def __fetch_from_folder(self, file_full_path: str, skip_empty_files: bool, skip_large_files: bool) -> FileInfo:
         """None for a file this scan is not to work on, and for one that could not be
-        read at all.
+        read at all. A symlink is never worked on, see
+        .claude/recipes/infrastructure-layer.md:30.
 
         A file that fails to open is dropped rather than handed on half filled: what
         reads these is also what deletes them, and a file whose contents never arrived
         is indistinguishable from an empty one once it is in the list. A share that goes
         down mid scan therefore costs the files it took with it, and nothing else.
         """
+        if os_path.islink(file_full_path):
+            self.event_manager.trigger("output", "Skipping symlink " + file_full_path)
+            return None
+
         if not os_path.isfile(file_full_path):
             return None
 

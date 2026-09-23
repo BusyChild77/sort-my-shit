@@ -27,7 +27,9 @@ Covers `src/infrastructure/`. Where the outside world is allowed in: the filesys
   the one that applies the large file and empty file skipping rules. **A file that cannot
   be read is dropped, never handed on half filled**: what reads these is what deletes
   them, and a file whose contents never arrived is indistinguishable from an empty one
-  once it is in the list.
+  once it is in the list. **A symlink is skipped too, and logged on `output`**: a link and
+  the file it points to read back identical, so a duplicate scan would offer one up for
+  removal, and removing the real file leaves a link pointing at nothing.
 - `SettingsRepository` — `settings.json` next to the executable. `fetch_all` fills in
   missing keys from `Settings.default_user_settings` and migrates settings written by
   older versions; see [settings.md](settings.md) before renaming one.
