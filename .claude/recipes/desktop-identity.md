@@ -11,7 +11,9 @@ launcher and puts the window on the dock under a second icon labelled "Tk".
 `DesktopIdentity.window_class()` and not `APPLICATION` itself. That is the string
 `StartupWMClass` carries in `packaging/SortMyShit.desktop`, and the two only meet on an
 exact match. macOS reads the bundle rather than the window, so `NAME` is repeated as
-`CFBundleName` / `CFBundleDisplayName` in `SortMyShit.spec`. **All three are held together
+`CFBundleName` / `CFBundleDisplayName` in `SortMyShit.spec`, and Windows reads the
+executable's version information, where it is repeated as `FileDescription` — the name
+Task Manager lists the process under — and `ProductName`. **All of them are held together
 by `DesktopIdentityTest`** — nothing fails loudly when they drift, the app simply appears
 twice on the dock. Windows is left to group by the executable itself: an explicit
 AppUserModelID with no installed shortcut carrying the same one would split the window

@@ -100,9 +100,23 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
+        if: matrix.platform != 'windows'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Install dependencies, compiling PyInstaller's bootloader
+        if: matrix.platform == 'windows'
+        # The bootloader is the stub every packaged executable starts from. The prebuilt
+        # one is shared with countless malware samples, which is what Defender keeps
+        # matching the .exe against, so on Windows PyInstaller is installed from its
+        # sources and the bootloader compiled on this runner. A bootloader that fails to
+        # compile fails the install: it never falls back to the prebuilt one.
+        env:
+          PYINSTALLER_COMPILE_BOOTLOADER: "1"
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-binary pyinstaller -r requirements.txt
 
       - name: Check tkinter is available to the build
         # PyInstaller only warns when it cannot find tkinter, and ships a binary that

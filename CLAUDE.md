@@ -83,6 +83,6 @@ always applies; **read the recipe for the area you are about to touch** before c
 | [settings.md](.claude/recipes/settings.md) | adding, renaming or reshaping a setting — migration is what keeps users from losing their configuration |
 | [non-local-folders.md](.claude/recipes/non-local-folders.md) | anything to do with cloud drives, network shares, mapped drives or WSL paths |
 | [updating.md](.claude/recipes/updating.md) | touching the updater — what each platform installs, and why macOS is never overwritten |
-| [icon-and-packaging.md](.claude/recipes/icon-and-packaging.md) | adding an asset read at runtime, or changing `SortMyShit.spec` / the release workflow |
+| [icon-and-packaging.md](.claude/recipes/icon-and-packaging.md) | adding an asset read at runtime, or changing `SortMyShit.spec` / the release workflow — including what keeps Windows from flagging the `.exe`: version information and the compiled bootloader |
 | [desktop-identity.md](.claude/recipes/desktop-identity.md) | changing the window title, the class name, the `.desktop` file or the bundle names |
 | [fonts.md](.claude/recipes/fonts.md) | swapping the title font, or adding a heading — the face draws capitals and nothing else |

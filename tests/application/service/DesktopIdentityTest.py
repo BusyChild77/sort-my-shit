@@ -36,6 +36,14 @@ class DesktopIdentityTest(TestCase):
         self.assertIn(f'"CFBundleName": "{DesktopIdentity.NAME}"', recipe)
         self.assertIn(f'"CFBundleDisplayName": "{DesktopIdentity.NAME}"', recipe)
 
+    def test_given_the_windows_executable_when_reading_its_version_information_then_it_names_the_application_as_the_window_does(self):
+        """Task Manager lists the process under its FileDescription and the properties
+        show its ProductName, so both repeat the name in the build recipe."""
+        recipe = self.__build_recipe()
+
+        self.assertIn(f'StringStruct("FileDescription", "{DesktopIdentity.NAME}")', recipe)
+        self.assertIn(f'StringStruct("ProductName", "{DesktopIdentity.NAME}")', recipe)
+
     def test_given_the_application_name_when_tk_is_given_it_then_the_window_class_is_the_title_cased_one(self):
         """Tk title cases whatever it is handed, so the class the desktop sees is never
         quite the name given here. Asking Tk for the name itself is what leaves an entry
