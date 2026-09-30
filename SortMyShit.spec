@@ -24,7 +24,8 @@ def windows_version_info():
     """What Windows reads off the executable: the name and version in its properties, and
     FileDescription, which is what Task Manager lists the process under.
 
-    An executable carrying none looks to Defender like one with something to hide, see
+    An executable carrying none looks to Defender like one with something to hide, and
+    SignPath refuses to sign one whose product name and version are not set, see
     .claude/recipes/icon-and-packaging.md:21. The version is the one the release workflow
     stamped, so a local build reads 0.0.0.
     """

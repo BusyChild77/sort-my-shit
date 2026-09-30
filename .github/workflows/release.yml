@@ -16,6 +16,11 @@ permissions:
 
 env:
   SOURCEFORGE_PROJECT: sortmyshit
+  # The project and the policy the Windows executable is signed under on SignPath, see
+  # .claude/recipes/icon-and-packaging.md:32. The organization id and the API token are
+  # the repository's, and signing is skipped until both are set.
+  SIGNPATH_PROJECT: sortmyshit
+  SIGNPATH_SIGNING_POLICY: release-signing
 
 jobs:
   version:
@@ -78,6 +83,11 @@ jobs:
     needs: version
     if: needs.version.outputs.release == 'true'
     runs-on: ${{ matrix.os }}
+    # SignPath reads this run's jobs and downloads the unsigned executable from it with
+    # the token of the run, which needs actions: read to let it.
+    permissions:
+      contents: read
+      actions: read
     strategy:
       fail-fast: false
       matrix:
@@ -169,12 +179,73 @@ jobs:
           # The runners have no FUSE, so appimagetool unpacks itself instead of mounting.
           ./appimagetool --appimage-extract-and-run "$appdir" "artifacts/$APPIMAGE"
 
+      - name: Check whether the Windows executable can be signed
+        id: signing
+        if: matrix.platform == 'windows'
+        shell: bash
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+        run: |
+          if [ -z "$SIGNPATH_API_TOKEN" ] || [ -z "$SIGNPATH_ORGANIZATION_ID" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SIGNPATH_API_TOKEN / SIGNPATH_ORGANIZATION_ID are not set, the Windows executable ships unsigned."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Hand the unsigned executable to SignPath
+        id: unsigned
+        if: steps.signing.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          # Outside the SortMyShit-* pattern the release downloads, so the unsigned copy
+          # is never published beside the signed one.
+          name: unsigned-windows-executable
+          path: .packaged/dist/SortMyShit.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Sign the executable
+        if: steps.signing.outputs.enabled == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ env.SIGNPATH_PROJECT }}
+          signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          # Every release signing request is approved by hand on SignPath, and this is how
+          # long the release waits for someone to do it before failing.
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: .packaged/signed
+
+      - name: Check the signature
+        if: steps.signing.outputs.enabled == 'true'
+        # SignPath hands back whatever its artifact configuration matched, so a
+        # configuration that signs nothing would otherwise ship an unsigned .exe quietly.
+        shell: pwsh
+        run: |
+          $signature = Get-AuthenticodeSignature .packaged/signed/SortMyShit.exe
+          if ($signature.Status -ne 'Valid') {
+            throw "The executable SignPath returned is not validly signed: $($signature.Status) $($signature.StatusMessage)"
+          }
+          Write-Output "Signed by $($signature.SignerCertificate.Subject)"
+
       - name: Package the Windows executable
         if: matrix.platform == 'windows'
         shell: bash
         run: |
+          set -e
           mkdir -p artifacts
-          cp .packaged/dist/SortMyShit.exe "artifacts/SortMyShit-${{ needs.version.outputs.version }}-windows-x86_64.exe"
+
+          executable=.packaged/dist/SortMyShit.exe
+          if [ "${{ steps.signing.outputs.enabled }}" = "true" ]; then
+            executable=.packaged/signed/SortMyShit.exe
+          fi
+
+          cp "$executable" "artifacts/SortMyShit-${{ needs.version.outputs.version }}-windows-x86_64.exe"
 
       - name: Package the macOS disk image
         if: matrix.platform == 'macos'
@@ -203,6 +274,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+          # The released files only: the unsigned executable handed to SignPath is an
+          # artifact of this run too.
+          pattern: SortMyShit-*
           merge-multiple: true
 
       - name: Create the release
@@ -223,6 +297,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+          # The released files only: the unsigned executable handed to SignPath is an
+          # artifact of this run too.
+          pattern: SortMyShit-*
           merge-multiple: true
 
       - name: Upload the executables

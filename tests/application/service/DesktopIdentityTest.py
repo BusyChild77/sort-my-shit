@@ -38,7 +38,8 @@ class DesktopIdentityTest(TestCase):
 
     def test_given_the_windows_executable_when_reading_its_version_information_then_it_names_the_application_as_the_window_does(self):
         """Task Manager lists the process under its FileDescription and the properties
-        show its ProductName, so both repeat the name in the build recipe."""
+        show its ProductName, so both repeat the name in the build recipe. The product
+        name is also the one SignPath checks before it signs anything."""
         recipe = self.__build_recipe()
 
         self.assertIn(f'StringStruct("FileDescription", "{DesktopIdentity.NAME}")', recipe)

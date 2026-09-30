@@ -148,6 +148,15 @@ repository secrets are set:
 | `SOURCEFORGE_SSH_KEY` | The private key whose public half is on that account |
 | `SOURCEFORGE_API_KEY` | Optional, used to point the download button of each platform at its own file |
 
+The Windows executable is signed through [SignPath Foundation](https://signpath.org), and
+ships unsigned, with a warning, until these are set. Once they are, every release waits for
+its signing request to be approved on SignPath, for an hour at most:
+
+| Name | Kind | What it is |
+| --- | --- | --- |
+| `SIGNPATH_API_TOKEN` | Secret | The API token of a SignPath CI user allowed to submit to the project |
+| `SIGNPATH_ORGANIZATION_ID` | Variable | The id of the SignPath organization the project lives in |
+
 ## Licensing and Contrubition
 
 See CONTRIBUTING.md and LICENSE files for more details
